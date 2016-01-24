@@ -54,6 +54,9 @@ cd $SOURCE_DIR
 make
 make install
 
+# Symlink to install directory
+ln -s $INSTALL_DIR/bin/mono $INSTALL_ROOT/mono
+
 # Clean up
 cd $CURRENT_DIR
 rm -rf $SOURCE_DIR

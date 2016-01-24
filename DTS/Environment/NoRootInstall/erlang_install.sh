@@ -3,7 +3,7 @@
 # This script downloads and installs the Erlang runtime from source.
 # Execute using:
 #
-#     source ./erlang_install {install directory} {version} {number of available cpu cores (optional)}
+#    	./erlang_install {install directory} {version} {number of available cpu cores (optional)}
 
 INSTALL_ROOT=$1
 ERLANG_VERSION=$2
@@ -46,7 +46,9 @@ export ERL_TOP=$SOURCE_DIR
 ./configure prefix=$INSTALL_DIR
 make -j $NUM_CORES
 make install
-export PATH=$PATH:$INSTALL_DIR/bin
+
+# Symlink to install directory
+ln -s $INSTALL_DIR/bin/erl $INSTALL_ROOT/erl
 
 # Clean up
 cd ..

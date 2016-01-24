@@ -36,12 +36,10 @@ wget https://www.rabbitmq.com/releases/rabbitmq-server/v$RABBIT_VERSION/rabbitmq
 tar -xJf rabbitmq-server-generic-unix-$RABBIT_VERSION.tar.xz
 rm -f rabbitmq-server-generic-unix-$RABBIT_VERSION.tar.xz
 
-# Add RabbitMQ to the PATH
-export PATH=$PATH:$INSTALL_DIR/sbin
-
-# Enable management console and start service
-rabbitmq-plugins enable rabbitmq_management
-rabbitmq_server-3.6.0/sbin/rabbitmq-server -detached
+# Symlink to install directory
+ln -s $INSTALL_DIR/sbin/rabbitmqctl $INSTALL_ROOT/rabbitmqctl
+ln -s $INSTALL_DIR/sbin/rabbitmq-server $INSTALL_ROOT/rabbitmq-server
+ln -s $INSTALL_DIR/sbin/rabbitmq-plugins $INSTALL_ROOT/rabbitmq-plugins
 
 # Clean up
 cd $CURRENT_DIR

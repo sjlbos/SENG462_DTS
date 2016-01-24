@@ -25,7 +25,7 @@ fi
 
 # Variables
 SOURCE_DIR=$INSTALL_ROOT/postgresql-$PSQL_VERSION
-INSTALL_DIR=$INSTALL_ROOT/postgres
+INSTALL_DIR=$INSTALL_ROOT/postgresql
 DATA_DIR=$INSTALL_DIR/data
 
 echo
@@ -42,6 +42,7 @@ cd $INSTALL_ROOT
 wget https://ftp.postgresql.org/pub/source/v$PSQL_VERSION/postgresql-$PSQL_VERSION.tar.gz
 tar -zxvf postgresql-$PSQL_VERSION.tar.gz
 rm -f postgresql-$PSQL_VERSION.tar.gz
+mv $INSTALL_ROOT/postgres $INSTALL_DIR
 
 # Build and install
 cd $SOURCE_DIR
@@ -49,15 +50,12 @@ cd $SOURCE_DIR
 make -j $NUM_CORES
 make install
 
+# Symlink executables to install root
+ln -s $INSTALL_DIR/bin/* $INSTALL_ROOT/
+
 # Initialize data directory
 mkdir $DATA_DIR
 $INSTALL_DIR/bin/initdb -D $DATA_DIR
-
-# Add Postgres to PATH
-export PATH=$PATH:$INSTALL_DIR/bin
-
-# Start database server
-$INSTALL_DIR/bin/postgres -D $DATA_DIR
 
 # Clean up
 cd ..
