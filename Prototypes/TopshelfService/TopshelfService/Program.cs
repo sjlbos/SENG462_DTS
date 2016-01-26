@@ -9,9 +9,9 @@ namespace TopshelfService
             HostFactory.Run(x =>                                 
             {
                 x.UseLinuxIfAvailable();
-                x.Service<Worker>(s =>    
+                x.Service<DemoService>(s =>    
                 {
-                    s.ConstructUsing(name => new Worker());    
+                    s.ConstructUsing(name => new DemoService());    
                     s.WhenStarted(tc => tc.Start());             
                     s.WhenStopped(tc => tc.Stop());              
                 });
