@@ -54,16 +54,16 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DTS\Services\DTSServices\RabbitMessaging\RabbitMessaging.csproj">
+    <ProjectReference Include="..\..\DTS\Services\RabbitMessaging\RabbitMessaging.csproj">
       <Project>{09d79c66-7e99-49ed-9a34-e3f71a2e604f}</Project>
       <Name>RabbitMessaging</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\DTS\Services\DTSServices\ServiceHost\ServiceHost.csproj">
+    <ProjectReference Include="..\..\DTS\Services\ServiceHost\ServiceHost.csproj">
       <Project>{f5275202-9cba-43aa-92da-369071b1ce00}</Project>
       <Name>ServiceHost</Name>
     </ProjectReference>

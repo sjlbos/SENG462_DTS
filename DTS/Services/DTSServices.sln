@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceHost", "ServiceHost\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessaging", "RabbitMessaging\RabbitMessaging.csproj", "{09D79C66-7E99-49ED-9A34-E3F71A2E604F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkloadGeneratorSlave", "..\..\..\Tests\WorkloadGeneratorSlave\WorkloadGeneratorSlave.csproj", "{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkloadGeneratorSlave", "..\..\Tests\WorkloadGeneratorSlave\WorkloadGeneratorSlave.csproj", "{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
