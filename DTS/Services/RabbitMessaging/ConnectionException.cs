@@ -7,7 +7,7 @@ namespace RabbitMessaging
     [Serializable]
     public class ConnectionException : Exception
     {
-         public ConnectionException() { }
+        public ConnectionException() { }
 
         public ConnectionException(string message) : base(message) { }
 
