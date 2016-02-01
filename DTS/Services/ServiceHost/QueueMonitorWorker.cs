@@ -12,7 +12,7 @@ namespace ServiceHost
         private static readonly ILog Log = LogManager.GetLogger(typeof(QueueMonitorWorker));
 
         public string InstanceId { get; private set; }
-        private readonly IMessageReceiver _messageReceiver;
+        protected readonly IMessageReceiver Receiver;
 
         protected QueueMonitorWorker(string instanceId, IMessageReceiver messageReceiver)
         {
@@ -22,7 +22,7 @@ namespace ServiceHost
                 throw new ArgumentNullException("messageReceiver");
 
             InstanceId = instanceId;
-            _messageReceiver = messageReceiver;
+            Receiver = messageReceiver;
         }
 
         public void Run(CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ namespace ServiceHost
             if (cancellationToken.IsCancellationRequested)
                 return;
 
-            cancellationToken.Register(() => _messageReceiver.CancelMessageWait());
+            cancellationToken.Register(() => Receiver.CancelMessageWait());
 
             while (true)
             {
@@ -42,12 +42,12 @@ namespace ServiceHost
                 string currentMessage = null;
                 try
                 {
-                    currentMessage = _messageReceiver.GetNextMessage();
+                    currentMessage = Receiver.GetNextMessage();
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
                     ProcessMessage(currentMessage);
-                    _messageReceiver.AckLastMessage();
+                    Receiver.AckLastMessage();
                 }
                 catch (Exception ex)
                 {
@@ -56,7 +56,7 @@ namespace ServiceHost
                         InstanceId, currentMessage
                         );
                     Log.Error(ex);
-                    _messageReceiver.NackLastMessage();
+                    Receiver.NackLastMessage();
                 }
             }     
         }
