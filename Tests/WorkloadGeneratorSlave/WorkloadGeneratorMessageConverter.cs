@@ -15,7 +15,12 @@ namespace WorkloadGeneratorSlave
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JObject item = JObject.Load(reader);
-            string messageType = item["MessageType"].Value<string>();
+
+            var token = item["MessageType"];
+            if (token == null)
+                throw new UnrecognizedMessageTypeException("Message does not have a type.");
+
+            string messageType = token.Value<string>();
             switch (messageType)
             {
                 case MessageType.ControlMessage:
