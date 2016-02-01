@@ -10,7 +10,7 @@ def callback(ch, method, properties, body):
 	tmp = "".join(map(chr, body))
 	tmp2 = json.loads(tmp)
 	for line in tmp2:
-		print("Line: " + line)
+		print(line)
 
 channel.basic_consume(callback, queue='UserInputs', no_ack=True)
 
