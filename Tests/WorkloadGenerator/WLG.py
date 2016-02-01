@@ -14,8 +14,6 @@ parser.add_argument('--slaves', nargs='?')
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
 channel = connection.channel()
 
-channel.queue_declare(queue='UserInputs')
-
 args = parser.parse_args()
 
 filename = ""
@@ -34,10 +32,13 @@ if args.port:
 	port = args.port
 if args.slaves:
 	num_Slaves = args.slaves
+
+url = "http://" + hostname
 if port:
-	url = hostname + ":" + port
-else:
-	url = hostname
+	url = url + ":" + port
+
+for i in range(1, int(num_Slaves)+1):
+	channel.queue_declare(queue='Slave' +str(i), durable=True)
 
 class ApiCommand:
 	def __init__(self, uri, request, newId, method, statuscode):
@@ -61,6 +62,15 @@ class BatchCommand:
 
 	def reprJSON(self):
 		return dict(MessageType=self.MessageType, Id=self.Id, Commands=self.Commands)
+
+class ControlCommand:
+	def __init__(self):
+		self.Id = "Start"
+		self.MessageType = "Control"
+		self.Command = "Start"
+
+	def reprJSON(self):
+		return dict(Id=self.Id, MessageType=self.MessageType, Command=self.Command)
 
 class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -221,12 +231,16 @@ for userId in UserList:
 	slaveNo = sent_messages % int(num_Slaves) + 1
 	channel.basic_publish(exchange='WorkloadGenerator', routing_key='Slave' + str(slaveNo), body=json_send)
 	sent_messages = sent_messages + 1
-
 #if doDump:
-#	tmpCommand = getDumplogCommand(command[1], TransId)
-#	messageCommand = BatchCommand("Control")
+#	messageCommand = StartCommand()
 
-print("[x] Sent " + str(sent_messages) + " Messages")
+input("If ready to go press 'Enter'")
+messageCommand = ControlCommand()
+json_send = json.dumps(messageCommand.reprJSON(), cls=ComplexEncoder)
+print(json_send)
+channel.basic_publish(exchange='WorkloadGenerator', routing_key='Control', body=json_send)
+
+print("Complete!")
 
 
 
