@@ -25,4 +25,6 @@ PSQL_VERSION="9.5.0"
 ./mono_install.sh $INSTALL_ROOT $MONO_VERSION $MONO_MINOR_RELEASE $NUM_CORES
 ./postgresql_install.sh $INSTALL_ROOT $PSQL_VERSION $NUM_CORES
 
+../Configuration/rabbitmq_setup.sh  $INSTALL_ROOT
 
+export PATH=$PATH:$INSTALL_ROOT
