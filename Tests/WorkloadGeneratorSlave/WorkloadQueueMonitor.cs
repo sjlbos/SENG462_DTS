@@ -53,7 +53,7 @@ namespace WorkloadGeneratorSlave
 
         private void HandleApiCommandMessage(WorkloadBatchMessage message)
         {
-            Log.DebugFormat(CultureInfo.InvariantCulture,
+            Log.InfoFormat(CultureInfo.InvariantCulture,
                 "Received command batch with Id={0}.", message.Id);
 
             _batchQueue.Enqueue(message);
@@ -123,6 +123,10 @@ namespace WorkloadGeneratorSlave
                         Log.DebugFormat("Api command with Id={0} executed successfully.", command.Id);
                     }
                 }
+            }
+            catch (NotSupportedException ex)
+            {
+                Log.Error("Command Uri is invalid: " + command.Uri, ex);
             }
             catch (WebException ex)
             {

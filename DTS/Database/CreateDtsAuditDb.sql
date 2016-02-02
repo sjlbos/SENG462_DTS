@@ -38,18 +38,18 @@ CREATE TABLE events(
 	occured_at timestamptz NOT NULL,
 	type event_type NOT NULL,
 	transaction_id uuid NOT NULL,
-	user_id char[10] NOT NULL,
-	service varchar[256] NOT NULL,
-	server varchar[256] NOT NULL
+	user_id char(10) NOT NULL,
+	service varchar(256) NOT NULL,
+	server varchar(256) NOT NULL
 );
 
 CREATE FUNCTION add_base_event(
 	_occured_at timestamptz,
 	_type event_type,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256]
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256)
 )
 RETURNS int AS
 $$
@@ -77,7 +77,7 @@ LANGUAGE SQL VOLATILE;
 CREATE TABLE user_command_events(
 	id int NOT NULL PRIMARY KEY,
 	command command_type NOT NULL,
-	stock char[3],
+	stock char(3),
 	funds money,
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -85,11 +85,11 @@ CREATE TABLE user_command_events(
 CREATE FUNCTION log_user_command_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
 	_command command_type,
-	_stock char[3],
+	_stock char(3),
 	_funds money
 )
 RETURNS int AS
@@ -125,7 +125,7 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 CREATE TABLE quote_server_events(
 	id int NOT NULL PRIMARY KEY,
-	stock char[3] NOT NULL,
+	stock char(3) NOT NULL,
 	price money NOT NULL,
 	quote_server_time timestamptz NOT NULL,
 	cryptokey varchar[64],
@@ -135,10 +135,10 @@ CREATE TABLE quote_server_events(
 CREATE FUNCTION log_quote_server_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
-	_stock char[3],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
+	_stock char(3),
 	_price money,
 	_quote_server_time timestamptz,
 	_cryptokey varchar[64]
@@ -187,9 +187,9 @@ CREATE TABLE account_transaction_events(
 CREATE FUNCTION log_account_transaction_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
 	_action account_action,
 	_funds money
 )
@@ -226,22 +226,22 @@ LANGUAGE 'plpgsql' VOLATILE;
 CREATE TABLE system_events(
 	id int NOT NULL PRIMARY KEY,
 	command command_type NOT NULL,
-	stock char[3],
+	stock char(3),
 	funds money,
-	filename varchar[1024],
+	filename varchar(1024),
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE FUNCTION log_system_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
 	_command command_type,
-	_stock char[3],
+	_stock char(3),
 	_funds money,
-	_filename varchar[1024]
+	_filename varchar(1024)
 )
 RETURNS int AS
 $$
@@ -280,24 +280,24 @@ LANGUAGE 'plpgsql' VOLATILE;
 CREATE TABLE error_events(
 	id int NOT NULL PRIMARY KEY,
 	command command_type NOT NULL,
-	stock char[3],
+	stock char(3),
 	funds money,
-	error_message varchar[1024],
-	filename varchar[1024],
+	error_message varchar(1024),
+	filename varchar(1024),
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE FUNCTION log_error_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
 	_command command_type,
-	_stock char[3],
+	_stock char(3),
 	_funds money,
-	_error_message varchar[1024],
-	_filename varchar[1024]
+	_error_message varchar(1024),
+	_filename varchar(1024)
 )
 RETURNS int AS
 $$
@@ -338,9 +338,9 @@ LANGUAGE 'plpgsql' VOLATILE;
 CREATE TABLE debug_events(
 	id int NOT NULL PRIMARY KEY,
 	command command_type NOT NULL,
-	stock char[3],
+	stock char(3),
 	funds money,
-	filename varchar[1024],
+	filename varchar(1024),
 	debug_message varchar[2056],
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -348,14 +348,14 @@ CREATE TABLE debug_events(
 CREATE FUNCTION log_debug_event(
 	_occured_at timestamptz,
 	_transaction_id uuid,
-	_user_id char[10],
-	_service varchar[256],
-	_server varchar[256],
+	_user_id char(10),
+	_service varchar(256),
+	_server varchar(256),
 	_command command_type,
-	_stock char[3],
+	_stock char(3),
 	_funds money,
-	_filename varchar[1024],
-	_debug_message varchar[1024]
+	_filename varchar(1024),
+	_debug_message varchar(1024)
 )
 RETURNS int AS
 $$

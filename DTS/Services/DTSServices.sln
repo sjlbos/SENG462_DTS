@@ -5,9 +5,15 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceHost", "ServiceHost\ServiceHost.csproj", "{F5275202-9CBA-43AA-92DA-369071B1CE00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessaging", "RabbitMessaging\RabbitMessaging.csproj", "{09D79C66-7E99-49ED-9A34-E3F71A2E604F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkloadGeneratorSlave", "..\..\Tests\WorkloadGeneratorSlave\WorkloadGeneratorSlave.csproj", "{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionMonitor", "TransactionMonitor\TransactionMonitor.csproj", "{5BD1E577-E178-4D92-8747-487039424AA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionEvents", "..\Shared\TransactionEvents\TransactionEvents.csproj", "{1DF98003-2369-4080-ABA9-7E8F71A07A17}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessaging", "..\Shared\RabbitMessaging\RabbitMessaging.csproj", "{09D79C66-7E99-49ED-9A34-E3F71A2E604F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,16 +25,28 @@ Global
 		{F5275202-9CBA-43AA-92DA-369071B1CE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5275202-9CBA-43AA-92DA-369071B1CE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5275202-9CBA-43AA-92DA-369071B1CE00}.Release|Any CPU.Build.0 = Release|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D516FDB0-AB34-4BD5-992A-E25156C3BE6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BD1E577-E178-4D92-8747-487039424AA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD1E577-E178-4D92-8747-487039424AA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD1E577-E178-4D92-8747-487039424AA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD1E577-E178-4D92-8747-487039424AA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17} = {6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F} = {6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}
 	EndGlobalSection
 EndGlobal
