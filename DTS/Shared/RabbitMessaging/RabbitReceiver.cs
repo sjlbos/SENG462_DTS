@@ -42,7 +42,7 @@ namespace RabbitMessaging
                 Channel = RabbitChannelProvider.OpenChannelToHost(HostConfig);
                 CreateQueue(_queueConfig);
                 _consumer = new QueueingBasicConsumer(Channel);
-                _consumerTag = Channel.BasicConsume(_queueConfig.Name, !_autoAckMessages, _consumer);
+                _consumerTag = Channel.BasicConsume(_queueConfig.Name, _autoAckMessages, _consumer);
             }
             catch (BrokerUnreachableException ex)
             {

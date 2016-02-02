@@ -9,12 +9,12 @@ using log4net;
 
 namespace ServiceHost
 {
-    public abstract class WorkerHost<T> : IService where T:IWorker
+    public abstract class WorkerHost : IService
     {
         protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private IList<Task> _workerTasks; 
-        private IList<T> _workers;   
+        private IList<IWorker> _workers;   
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public bool RestartCrashedWorkers { get; set; }
@@ -60,18 +60,18 @@ namespace ServiceHost
 
         private void StartWorkers()
         {
-            _workerTasks = new Task[_workers.Count];
-            for (int i = 0; i < _workers.Count; i ++)
+            _workerTasks = new List<Task>();
+            foreach (var worker in _workers)
             {
-                var currentWorker = _workers[i]; // copy loop variable to local variable to avoid closure issues
+                var currentWorker = worker; // copy loop variable to local variable to avoid closure issues
                 Log.Debug(String.Format(CultureInfo.InvariantCulture, "Starting worker {0}...", currentWorker.InstanceId));
                 var workerTask = Task.Run(() => currentWorker.Run(_cancellationTokenSource.Token));
-                _workerTasks[i] = workerTask;
+                _workerTasks.Add(workerTask);
             }
         }
 
         protected abstract void InitializeService();
-        protected abstract IList<T> GetWorkerList();
+        protected abstract IList<IWorker> GetWorkerList();
 
         private void MonitorWorkers()
         {
