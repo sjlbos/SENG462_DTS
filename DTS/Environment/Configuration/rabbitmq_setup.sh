@@ -9,13 +9,13 @@ fi
 
 cd $INSTALL_ROOT
 # Enable management console
-rabbitmq-plugins enable rabbitmq_management
+./rabbitmq-plugins enable rabbitmq_management
 
 # Start service
-rabbitmq-server -detached
+./rabbitmq-server -detached
 
 # Add and Configure User
-rabbitmqctl add_user dts_user Group1
+./rabbitmqctl add_user dts_user Group1
 
-rabbitmqctl set_permissions -p / dts_user "^dts_user-.*" ".*" ".*"
+./rabbitmqctl set_permissions -p / dts_user "^dts_user-.*" ".*" ".*"
 

@@ -14,15 +14,14 @@ if [[ -z "$INSTALL_ROOT" ]]; then
 fi
 
 if [[ -z "$GO_VERSION" ]]; then
-	echo "No Go version specified."
-	exit 1
+	GO_VERSION="1.5.3"
 fi
 
 echo
 echo "Downloading and installing Go..."
 echo
 
-INSTALL_DIR = $INSTALL_ROOT/go
+INSTALL_DIR = $INSTALL_ROOT/go_src
 CURRENT_DIR=`pwd`
 
 mkdir -p $INSTALL_ROOT
@@ -34,9 +33,11 @@ tar -xzf go$GO_VERSION.linux-amd64.tar.gz
 rm -f go$GO_VERSION.linux-amd64.tar.gz
 
 # Symlink to install directory
-ln -s $INSTALL_DIR/bin/go $INSTALL_ROOT/go
-ln -s $INSTALL_DIR/bin/godoc $INSTALL_ROOT/godoc
-ln -s $INSTALL_DIR/bin/gofmt $INSTALL_ROOT/goftm
+mv go go_src
+
+ln -s ./go_src/bin/go ./go
+ln -s ./go_src/bin/godoc ./godoc
+ln -s ./go_src/bin/gofmt ./goftm
 
 cd $CURRENT_DIR
 
