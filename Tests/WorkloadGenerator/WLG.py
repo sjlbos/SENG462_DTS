@@ -121,22 +121,26 @@ def getCancelSellCommand(User, Id):
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	json_string = '{"Amount" : ' + Amount + '}'
 	return ApiCommand(uri, Amount, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
-def getSetBuyTriggerCommand(User, StockSymbol, Amount, Id):
+def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
-	return ApiCommand(uri, Amount, Id, "PUT", 200)
+	json_string = '{"Price" : ' + Price + '}'
+	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
-	return ApiCommand(uri, Amount, Id, "PUT", 200)
+	json_string = '{"Amount" : ' + Amount + '}'
+	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
-def getSetSellTriggerCommand(User, StockSymbol, Amount, Id):
+def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	json_string = '{"Price" : ' + Price + '}'
 	return ApiCommand(uri, Amount, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
