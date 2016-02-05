@@ -37,7 +37,7 @@ CREATE TABLE events(
 	logged_at timestamptz NOT NULL DEFAULT current_timestamp,
 	occured_at timestamptz NOT NULL,
 	type event_type NOT NULL,
-	transaction_id uuid NOT NULL,
+	transaction_id int NOT NULL,
 	user_id char(10) NOT NULL,
 	service varchar(256) NOT NULL,
 	server varchar(256) NOT NULL
@@ -46,7 +46,7 @@ CREATE TABLE events(
 CREATE FUNCTION add_base_event(
 	_occured_at timestamptz,
 	_type event_type,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256)
@@ -84,7 +84,7 @@ CREATE TABLE user_command_events(
 
 CREATE FUNCTION log_user_command_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
@@ -128,20 +128,20 @@ CREATE TABLE quote_server_events(
 	stock char(3) NOT NULL,
 	price money NOT NULL,
 	quote_server_time timestamptz NOT NULL,
-	cryptokey varchar[64],
+	cryptokey varchar(64),
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE FUNCTION log_quote_server_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
 	_stock char(3),
 	_price money,
 	_quote_server_time timestamptz,
-	_cryptokey varchar[64]
+	_cryptokey varchar(64)
 )
 RETURNS int AS
 $$
@@ -186,7 +186,7 @@ CREATE TABLE account_transaction_events(
 
 CREATE FUNCTION log_account_transaction_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
@@ -234,7 +234,7 @@ CREATE TABLE system_events(
 
 CREATE FUNCTION log_system_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
@@ -282,21 +282,21 @@ CREATE TABLE error_events(
 	command command_type NOT NULL,
 	stock char(3),
 	funds money,
-	error_message varchar(1024),
+	error_message varchar(2048),
 	filename varchar(1024),
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE FUNCTION log_error_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
 	_command command_type,
 	_stock char(3),
 	_funds money,
-	_error_message varchar(1024),
+	_error_message varchar(2048),
 	_filename varchar(1024)
 )
 RETURNS int AS
@@ -341,13 +341,13 @@ CREATE TABLE debug_events(
 	stock char(3),
 	funds money,
 	filename varchar(1024),
-	debug_message varchar[2056],
+	debug_message varchar(2048),
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE FUNCTION log_debug_event(
 	_occured_at timestamptz,
-	_transaction_id uuid,
+	_transaction_id int,
 	_user_id char(10),
 	_service varchar(256),
 	_server varchar(256),
@@ -355,7 +355,7 @@ CREATE FUNCTION log_debug_event(
 	_stock char(3),
 	_funds money,
 	_filename varchar(1024),
-	_debug_message varchar(1024)
+	_debug_message varchar(2048)
 )
 RETURNS int AS
 $$
@@ -392,4 +392,323 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+CREATE FUNCTION get_all_events(_start timestamptz, _end timestamptz)
+RETURNS TABLE(	id int, 
+				logged_at timestamptz, 
+				occured_at timestamptz,
+				type event_type,
+				transaction_id int,
+				user_id char(10),
+				service char(256),
+				server char(256),
+				command command_type,
+				stock char(3),
+				funds money,
+				filename varchar(1024),
+				message varchar(2048),
+				action account_action,
+				quote_server_time timestamptz,
+				cryptokey varchar(64)
+			) AS
+$$
+	WITH base_events AS(
+		SELECT 	id,
+				logged_at,
+				occured_at,
+				type,
+				transaction_id,
+				user_id,
+				service,
+				server
+		FROM events
+		WHERE occured_at BETWEEN _start AND _end
+		)
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			uc.command, 
+			uc.stock, 
+			uc.funds,
+			CAST(NULL AS varchar(1024)),
+			CAST(NULL AS varchar(2056)),
+			CAST(NULL AS account_action),
+			CAST(NULL AS timestamptz),
+			CAST(NULL AS varchar(64))
+	FROM base_events e
+	INNER JOIN user_command_events uc ON e.id = uc.id
+
+	UNION ALL 
+
+		SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			NULL,
+			qs.stock,
+			qs.price,
+			NULL,
+			NULL,
+			NULL,
+			qs.quote_server_time,
+			qs.cryptokey
+	FROM base_events e
+	INNER JOIN quote_server_events qs ON e.id = qs.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			NULL,
+			NULL,
+			at.funds,
+			NULL,
+			NULL,
+			at.action,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN account_transaction_events at ON e.id = at.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			se.command, 
+			se.stock, 
+			se.funds,
+			se.filename,
+			NULL,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN system_events se ON e.id = se.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			er.command, 
+			er.stock, 
+			er.funds,
+			er.filename,
+			er.error_message,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN error_events er ON e.id = er.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			de.command, 
+			de.stock, 
+			de.funds,
+			de.filename,
+			de.debug_message,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN debug_events de ON e.id = de.id
+
+	ORDER BY occured_at DESC;
+$$
+LANGUAGE SQL VOLATILE;
+
+
+CREATE FUNCTION get_all_events_by_user(_user_id char(10), _start timestamptz, _end timestamptz)
+RETURNS TABLE(	id int, 
+				logged_at timestamptz, 
+				occured_at timestamptz,
+				type event_type,
+				transaction_id int,
+				user_id char(10),
+				service char(256),
+				server char(256),
+				command command_type,
+				stock char(3),
+				funds money,
+				filename varchar(1024),
+				message varchar(2048),
+				action account_action,
+				quote_server_time timestamptz,
+				cryptokey varchar(64)
+			) AS
+$$
+	WITH base_events AS(
+		SELECT 	id,
+				logged_at,
+				occured_at,
+				type,
+				transaction_id,
+				user_id,
+				service,
+				server
+		FROM events
+		WHERE user_id = _user_id
+			AND occured_at BETWEEN _start AND _end
+		)
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			uc.command, 
+			uc.stock, 
+			uc.funds,
+			CAST(NULL AS varchar(1024)),
+			CAST(NULL AS varchar(2056)),
+			CAST(NULL AS account_action),
+			CAST(NULL AS timestamptz),
+			CAST(NULL AS varchar(64))
+	FROM base_events e
+	INNER JOIN user_command_events uc ON e.id = uc.id
+
+	UNION ALL 
+
+		SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			NULL,
+			qs.stock,
+			qs.price,
+			NULL,
+			NULL,
+			NULL,
+			qs.quote_server_time,
+			qs.cryptokey
+	FROM base_events e
+	INNER JOIN quote_server_events qs ON e.id = qs.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			NULL,
+			NULL,
+			at.funds,
+			NULL,
+			NULL,
+			at.action,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN account_transaction_events at ON e.id = at.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			se.command, 
+			se.stock, 
+			se.funds,
+			se.filename,
+			NULL,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN system_events se ON e.id = se.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			er.command, 
+			er.stock, 
+			er.funds,
+			er.filename,
+			er.error_message,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN error_events er ON e.id = er.id
+
+	UNION ALL
+
+	SELECT 	e.id, 
+			e.logged_at, 
+			e.occured_at, 
+			e.type, 
+			e.transaction_id, 
+			e.user_id, 
+			e.service, 
+			e.server, 
+			de.command, 
+			de.stock, 
+			de.funds,
+			de.filename,
+			de.debug_message,
+			NULL,
+			NULL,
+			NULL
+	FROM base_events e
+	INNER JOIN debug_events de ON e.id = de.id
+
+	ORDER BY occured_at DESC;
+$$
+LANGUAGE SQL VOLATILE;
 
