@@ -25,9 +25,27 @@ var routes = Routes{
         TodoIndex,
     },
     Route{
-        "TodoShow",
-        "GET",
-        "/todos/{todoId}",
-        TodoShow,
+        "Add",
+        "PUT",
+        "/api/users/{id}",
+        Add,
+    },
+    Route{
+	"Quote",
+	"GET",
+	"/api/users/{id}/stocks/quote/{symbol}",
+	Quote,
+    },
+    Route{
+	"Buy",
+	"POST",
+	"/api/users/{id}/pending-purchases",
+	Buy,
+    },
+    Route{
+	"Sell",
+	"POST",
+	"/api/users/{id}/pending-sales",
+	Sell,
     },
 }

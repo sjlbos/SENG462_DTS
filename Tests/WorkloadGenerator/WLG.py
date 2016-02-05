@@ -86,15 +86,17 @@ def encode_Command(obj):
 
 def getAddCommand(User, Amount, Id):
 	uri = url + "/api/users/" + User
-	return ApiCommand(uri, Amount, Id, "PUT", 200)
+	json_string = '{ "Amount" : ' + Amount + ' }'
+	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
-	uri = url + "/api/stocks/"+StockSymbol
+	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol
 	return ApiCommand(uri, StockSymbol, Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases"
-	return ApiCommand(uri, StockSymbol+","+Amount, Id, "POST", 200)
+        json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount ' }'
+	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases/commit"
@@ -106,7 +108,8 @@ def getCancelBuyCommand(User, Id):
 
 def getSellCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-sales"
-	return ApiCommand(uri, StockSymbol+","+Amount, Id, "POST", 200)
+        json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount ' }'
+	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
 	uri = url + "/api/users/"+User+"/pending-sales/commit"
