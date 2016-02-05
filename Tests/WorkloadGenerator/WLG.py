@@ -95,7 +95,7 @@ def getQuoteCommand(User, StockSymbol, Id):
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases"
-        json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
@@ -108,7 +108,7 @@ def getCancelBuyCommand(User, Id):
 
 def getSellCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-sales"
-        json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
