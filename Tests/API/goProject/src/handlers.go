@@ -6,32 +6,35 @@ import (
     "net"
     "net/http"
     "os"
+    "log"
     "strings"
 
     "github.com/gorilla/mux"
+    "github.com/streadway/amqp"
 )
+
+
+//topic exchange DtsEvents, durable
+//TransactionEvent.*
+/*
+   <xsd:element name="userCommand" type="UserCommandType"/>
+   <xsd:element name="quoteServer" type="QuoteServerType"/>
+   <xsd:element name="accountTransaction" type="AccountTransactionType"/>
+   <xsd:element name="systemEvent" type="SystemEventType"/>
+   <xsd:element name="errorEvent" type="ErrorEventType"/>
+   <xsd:element name="debugEvent" type="DebugType"/>
+*/
+
+
+func failOnError(err error, msg string) {
+    if err != nil {
+        log.Fatalf("%s: %s", msg, err)
+        panic(fmt.Sprintf("%s: %s", msg, err))
+    }
+}
 
 func Index(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Welcome!")
-}
-
-func TodoIndex(w http.ResponseWriter, r *http.Request) {
-    todos := Todos{
-        Todo{Name: "Write presentation"},
-        Todo{Name: "Host meetup"},
-    }
-
-    w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-    w.WriteHeader(http.StatusOK)
-    if err := json.NewEncoder(w).Encode(todos); err != nil {
-        panic(err)
-    }
-}
-
-func TodoShow(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    todoId := vars["todoId"]
-    fmt.Fprintln(w, "Todo show:", todoId)
 }
 
 
@@ -50,20 +53,20 @@ func Quote(w http.ResponseWriter, r *http.Request){
         os.Exit(1)
     }
 
-    conn, err := net.DialTCP("tcp", nil, tcpAddr)
+    qconn, err := net.DialTCP("tcp", nil, tcpAddr)
     if err != nil {
         println("Dial failed:", err.Error())
         os.Exit(1)
     }
 
-    _, err = conn.Write([]byte(strEcho))
+    _, err = qconn.Write([]byte(strEcho))
     if err != nil {
         println("Write to server failed:", err.Error())
         os.Exit(1)
     }
 
     reply := make([]byte, 1024)
-    _, err = conn.Read(reply)
+    _, err = qconn.Read(reply)
 
     result := strings.Split(string(reply),",")
     fmt.Fprintln(w, result[0])
@@ -71,7 +74,43 @@ func Quote(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, result[2])
     fmt.Fprintln(w, result[3])
 
-    conn.Close()
+    //Audit Quote
+
+    rconn, err := amqp.Dial("amqp://dts_User:Group1@localhost:44411/")
+    failOnError(err, "Failed to connect to RabbitMQ")
+    defer rconn.Close()
+
+    ch, err := rconn.Channel()
+    failOnError(err, "Failed to open a channel")
+    defer ch.Close()
+
+    err = ch.ExchangeDeclare(
+            "DtsEvents", // name
+            "topic",      // type
+            true,         // durable
+            false,        // auto-deleted
+            false,        // internal
+            false,        // no-wait
+            nil,          // arguments
+    )
+    failOnError(err, "Failed to declare an exchange")
+
+    body := "This is a message"
+    err = ch.Publish(
+        "DtsEvents",          // exchange
+        "TransactionEvent.quoteServer", // routing key
+        false, // mandatory
+        false, // immediate
+        amqp.Publishing{
+                ContentType: "text/plain",
+                Body:        []byte(body),
+        })
+    failOnError(err, "Failed to publish a message")
+
+    log.Printf(" [x] Sent %s", body)
+
+    rconn.Close()
+    qconn.Close()
 }
 
 func Add(w http.ResponseWriter, r *http.Request){
