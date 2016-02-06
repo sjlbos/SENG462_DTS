@@ -1,41 +1,50 @@
 import argparse
-import queue
+
 import pika
 import json
-import jsonpickle
-
+import Queue
 
 parser = argparse.ArgumentParser(description='Workload Generator for Distributed System')
 parser.add_argument('--filename', nargs='?')
 parser.add_argument('--hostname', nargs='?')
 parser.add_argument('--port', nargs='?')
 parser.add_argument('--slaves', nargs='?')
-
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
-channel = connection.channel()
+parser.add_argument('--rhost', nargs='?')
+parser.add_argument('--rport', nargs='?')
 
 args = parser.parse_args()
 
+rabbitHost = "localhost"
+rabbitPort = "44411"
+
 filename = ""
 hostname = "localhost"
-port = ""
 num_Slaves = 1
 doDump = False
+port = ""
 
 if args.filename:
 	filename = args.filename
 else:
-	filename = input("Workload File: ")
+	filename = raw_input("Workload File: ")
 if args.hostname:
 	hostname = args.hostname
 if args.port:
 	port = args.port
 if args.slaves:
 	num_Slaves = args.slaves
+if args.rhost:
+	rabbitHost = args.rhost
+if args.rport:
+	rabbitPort = args.rport
 
 url = "http://" + hostname
 if port:
 	url = url + ":" + port
+
+credentials = pika.PlainCredentials('dts_user', 'Group1')
+connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, int(rabbitPort), '/', credentials))
+channel = connection.channel()
 
 for i in range(1, int(num_Slaves)+1):
 	channel.queue_declare(queue='Slave' +str(i), durable=True)
@@ -122,7 +131,7 @@ def getCancelSellCommand(User, Id):
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	json_string = '{"Amount" : ' + Amount + '}'
-	return ApiCommand(uri, Amount, Id, "PUT", 200)
+	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
@@ -141,7 +150,7 @@ def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	json_string = '{"Price" : ' + Price + '}'
-	return ApiCommand(uri, Amount, Id, "PUT", 200)
+	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
@@ -173,7 +182,7 @@ for line in fp:
 
 #Store in queues
 	if userId not in UserList and command != 'DUMPLOG':
-		UserList[userId] = queue.Queue()
+		UserList[userId] = Queue.Queue()
 	if command != 'DUMPLOG':
 		UserList[userId].put(line)
 
@@ -236,12 +245,15 @@ for userId in UserList:
 	json_send = json.dumps(UserCommands.reprJSON(), cls=ComplexEncoder)
 	print(json_send)
 	slaveNo = sent_messages % int(num_Slaves) + 1
-	channel.basic_publish(exchange='WorkloadGenerator', routing_key='Slave' + str(slaveNo), body=json_send)
+	rKey = "Slave" + str(slaveNo)
+	rExchange = "WorkloadGenerator"
+        print("Sending to Slave " + rKey)
+	channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
 	sent_messages = sent_messages + 1
 #if doDump:
 #	messageCommand = StartCommand()
 
-input("If ready to go press 'Enter'")
+raw_input("Press Enter to continue...")
 messageCommand = ControlCommand()
 json_send = json.dumps(messageCommand.reprJSON(), cls=ComplexEncoder)
 print(json_send)
