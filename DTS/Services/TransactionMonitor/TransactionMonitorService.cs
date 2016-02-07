@@ -7,6 +7,7 @@ using System.Globalization;
 using RabbitMessaging;
 using ServiceHost;
 using TransactionEvents;
+using TransactionMonitor.Api;
 using TransactionMonitor.Repository;
 
 namespace TransactionMonitor
@@ -16,11 +17,13 @@ namespace TransactionMonitor
         private int _queueReaderCount;
         private int _dbWriterCount;
         private string _dbConnectionString;
+        private Uri _apiEndpoint;
 
         protected override void InitializeService()
         {
             _queueReaderCount = Int32.Parse(ConfigurationManager.AppSettings["NumberOfQueueReaders"]);
             _dbWriterCount = Int32.Parse(ConfigurationManager.AppSettings["NumberOfDbWriters"]);
+            _apiEndpoint = new Uri(ConfigurationManager.AppSettings["ApiRoot"]);
             _dbConnectionString = ConfigurationManager.ConnectionStrings["DtsAuditDb"].ConnectionString;
         }
 
@@ -42,6 +45,9 @@ namespace TransactionMonitor
                 workerList.Add(new EventWriterWorker(
                     i.ToString(CultureInfo.InvariantCulture), repository, sharedBuffer));
             }
+
+            workerList.Add(new NancyHostLauncherWorker("Nancy Launcher", _apiEndpoint, repository));
+
             return workerList;
         }
     }

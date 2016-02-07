@@ -14,7 +14,7 @@ namespace TransactionMonitor.Repository
         void LogDebugEvent(DebugEvent debugEvent);
 
         IEnumerable<TransactionEvent> GetLogOfTransaction(Guid transactionId);
-        IEnumerable<TransactionEvent> GetAllLogsBeween(DateTime start, DateTime end);
-        IEnumerable<TransactionEvent> GetAllLogs();
+        IEnumerable<TransactionEvent> GetLogsForUser(string userId, DateTime start, DateTime end);
+        IEnumerable<TransactionEvent> GetAllLogs(DateTime start, DateTime end);
     }
 }
