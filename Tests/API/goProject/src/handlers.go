@@ -8,9 +8,10 @@ import (
     "os"
     "log"
     "strings"
+    "strconv"
 
     "github.com/gorilla/mux"
-    //"github.com/streadway/amqp"
+    "github.com/streadway/amqp"
 )
 
 
@@ -24,6 +25,15 @@ import (
    <xsd:element name="errorEvent" type="ErrorEventType"/>
    <xsd:element name="debugEvent" type="DebugType"/>
 */
+
+func stripCtlAndExtFromUTF8(str string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 32 && r < 127 {
+			return r
+		}
+		return -1
+	}, str)
+}
 
 func failOnError(err error, msg string) {
     if err != nil {
@@ -46,7 +56,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
     type QuoteCommand struct{
         Price   float64
         StockSymbol string
-        QuoteServerTime int64
+        QuoteServerTime string
         Cryptokey string
     }
 
@@ -73,17 +83,19 @@ func Quote(w http.ResponseWriter, r *http.Request){
 
     reply := make([]byte, 1024)
     _, err = qconn.Read(reply)
-
+    println(reply)
     result := strings.Split(string(reply),",")
-    fmt.Fprintln(w, result[0])
+    tmpResult0, err := strconv.ParseFloat(result[0], 64)
+    fmt.Fprintln(w, tmpResult0)
     fmt.Fprintln(w, result[1])
     fmt.Fprintln(w, result[2])
     fmt.Fprintln(w, result[3])
-    fmt.Fprintln(w, result[4])
+    tmpResult4 := stripCtlAndExtFromUTF8(result[4])
+    fmt.Fprintln(w, tmpResult4)
 
     //Audit Quote
 
-    rconn, err := amqp.Dial("amqp://dts_user:Group1@localhost:44411/")
+    rconn, err := amqp.Dial("amqp://dts_user:Group1@localhost:5672/")
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()
 
@@ -95,14 +107,14 @@ func Quote(w http.ResponseWriter, r *http.Request){
             "DtsEvents", // name
             "topic",      // type
             true,         // durable
-            false,        // auto-deleted
+            true,        // auto-deleted
             false,        // internal
             false,        // no-wait
             nil,          // arguments
     )
     failOnError(err, "Failed to declare an exchange")
 
-    q := QuoteCommand{result[0],result[1],result[3],result[4]}
+    q := QuoteCommand{tmpResult0,result[1],result[3],tmpResult4}
     body, err := json.Marshal(q)
 
     

@@ -46,7 +46,7 @@ credentials = pika.PlainCredentials('dts_user', 'Group1')
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, int(rabbitPort), '/', credentials))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='WorkloadGenerator',type='direct')
+channel.exchange_declare(exchange='WorkloadGenerator',type='direct', durable=True, auto_delete=True)
 for i in range(1, int(num_Slaves)+1):
 	channel.queue_declare(queue='Slave' +str(i), durable=True)
 
@@ -101,7 +101,7 @@ def getAddCommand(User, Amount, Id):
 
 def getQuoteCommand(User, StockSymbol, Id):
 	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol
-	return ApiCommand(uri, StockSymbol, Id, "GET", 200)
+	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases"
