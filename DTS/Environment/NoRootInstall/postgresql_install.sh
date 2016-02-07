@@ -26,7 +26,6 @@ fi
 # Variables
 SOURCE_DIR=$INSTALL_ROOT/postgresql-$PSQL_VERSION
 INSTALL_DIR=$INSTALL_ROOT/postgresql
-DATA_DIR=$INSTALL_DIR/data
 
 echo
 echo "Downloading and installing Postgresql..."
@@ -52,10 +51,6 @@ make install
 
 # Symlink executables to install root
 ln -s $INSTALL_DIR/bin/* $INSTALL_ROOT/
-
-# Initialize data directory
-mkdir $DATA_DIR
-$INSTALL_DIR/bin/initdb -D $DATA_DIR
 
 # Clean up
 cd ..
