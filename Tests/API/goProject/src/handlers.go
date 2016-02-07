@@ -10,7 +10,7 @@ import (
     "strings"
 
     "github.com/gorilla/mux"
-    "github.com/streadway/amqp"
+    //"github.com/streadway/amqp"
 )
 
 
@@ -24,7 +24,6 @@ import (
    <xsd:element name="errorEvent" type="ErrorEventType"/>
    <xsd:element name="debugEvent" type="DebugType"/>
 */
-
 
 func failOnError(err error, msg string) {
     if err != nil {
@@ -43,6 +42,13 @@ func Quote(w http.ResponseWriter, r *http.Request){
     vars := mux.Vars(r)
     StockId := vars["symbol"]
     UserId := vars["id"]
+
+    type QuoteCommand struct{
+        Price   float64
+        StockSymbol string
+        QuoteServerTime int64
+        Cryptokey string
+    }
 
     strEcho :=  StockId + "," + UserId + "\n"
     servAddr := "quoteserve.seng.uvic.ca:4444"
@@ -73,10 +79,11 @@ func Quote(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, result[1])
     fmt.Fprintln(w, result[2])
     fmt.Fprintln(w, result[3])
+    fmt.Fprintln(w, result[4])
 
     //Audit Quote
 
-    rconn, err := amqp.Dial("amqp://dts_User:Group1@localhost:44411/")
+    rconn, err := amqp.Dial("amqp://dts_User:Group1@localhost:5762/")
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()
 
@@ -95,7 +102,10 @@ func Quote(w http.ResponseWriter, r *http.Request){
     )
     failOnError(err, "Failed to declare an exchange")
 
-    body := "This is a message"
+    q := QuoteCommand{result[0],result[1],result[3],result[4]}
+    body, err := json.Marshal(q)
+
+    
     err = ch.Publish(
         "DtsEvents",          // exchange
         "TransactionEvent.quoteServer", // routing key
@@ -110,6 +120,8 @@ func Quote(w http.ResponseWriter, r *http.Request){
     log.Printf(" [x] Sent %s", body)
 
     rconn.Close()
+
+
     qconn.Close()
 }
 
@@ -129,6 +141,8 @@ func Add(w http.ResponseWriter, r *http.Request){
     }
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, t.Amount)
+
+
 
 //TODO database stuff!
 
