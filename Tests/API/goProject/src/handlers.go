@@ -83,7 +83,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
 
     //Audit Quote
 
-    rconn, err := amqp.Dial("amqp://dts_User:Group1@localhost:5762/")
+    rconn, err := amqp.Dial("amqp://dts_user:Group1@localhost:44411/")
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()
 
