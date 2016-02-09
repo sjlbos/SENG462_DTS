@@ -95,78 +95,78 @@ def encode_Command(obj):
     return obj
 
 def getAddCommand(User, Amount, Id):
-	uri = url + "/api/users/" + User
+	uri = url + "/api/users/" + User + "/" + Id
 	json_string = '{ "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol
+	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol+ "/" + Id
 	return ApiCommand(uri, StockSymbol, Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases"
+	uri = url + "/api/users/"+User+"/pending-purchases" + "/" + Id
 	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases/commit"
+	uri = url + "/api/users/"+User+"/pending-purchases/commit" + "/" + Id
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases"
+	uri = url + "/api/users/"+User+"/pending-purchases" + "/" + Id
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSellCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-sales"
+	uri = url + "/api/users/"+User+"/pending-sales" + "/" + Id
 	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales/commit"
+	uri = url + "/api/users/"+User+"/pending-sales/commit"+ "/" + Id
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales"
+	uri = url + "/api/users/"+User+"/pending-sales"+ "/" + Id
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol + "/" + Id
 	json_string = '{"Amount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol+ "/" + Id
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol + "/" + Id
 	json_string = '{"Price" : ' + Price + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol+ "/" + Id
 	json_string = '{"Amount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol + "/" + Id
 	json_string = '{"Price" : ' + Price + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol + "/" + Id
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getDumplogUserCommand(User,Id):
-	uri = url + "/api/users/"+User+"/transactions"
+	uri = url + "/api/users/"+User+"/transactions"+ "/" + Id
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDumplogCommand(Id):
-	uri = url + "/api/users/transactions"
+	uri = url + "/api/users/transactions"+ "/" + Id
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDisplaySummaryCommand(User, Id):
-	uri = url + "/api/users/"+User+"/summary"
+	uri = url + "/api/users/"+User+"/summary"+ "/" + Id
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 #Open File
