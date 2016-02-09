@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using log4net;
 using Nancy;
 using TransactionEvents;
 using TransactionMonitor.Repository;
@@ -10,8 +9,6 @@ namespace TransactionMonitor.Api
 {
     public class AuditModule : NancyModule
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof (AuditModule));
-
         private readonly IAuditRepository _repository;
 
         public AuditModule(IAuditRepository repository) : base("/audit")
@@ -20,8 +17,8 @@ namespace TransactionMonitor.Api
 
             Get["/transactions"] = parameters =>
             {
-                var startTimeParam = Request.Query["start"];
-                var endTimeParam = Request.Query["end"];
+                var startTimeParam = (string)Request.Query["start"];
+                var endTimeParam = (string)Request.Query["end"];
                 DateTime startTime;
                 DateTime endTime;
 
@@ -62,8 +59,8 @@ namespace TransactionMonitor.Api
             Get["/transactions/{FileName}"] = parameters =>
             {
                 var fileName = (string) parameters.FileName;
-                var startTimeParam = Request.Query["start"];
-                var endTimeParam = Request.Query["end"];
+                var startTimeParam = (string) Request.Query["start"];
+                var endTimeParam = (string) Request.Query["end"];
                 DateTime startTime;
                 DateTime endTime;
 
@@ -104,8 +101,8 @@ namespace TransactionMonitor.Api
             Get["/users/{Id}"] = parameters =>
             {
                 var userId = parameters.Id;
-                var startTimeParam = Request.Query["start"];
-                var endTimeParam = Request.Query["end"];
+                var startTimeParam = (string) Request.Query["start"];
+                var endTimeParam = (string) Request.Query["end"];
                 DateTime startTime;
                 DateTime endTime;
 
@@ -147,8 +144,8 @@ namespace TransactionMonitor.Api
             {
                 var userId = (string) parameters.Id;
                 var fileName = (string) parameters.FileName;
-                var startTimeParam = Request.Query["start"];
-                var endTimeParam = Request.Query["end"];
+                var startTimeParam = (string) Request.Query["start"];
+                var endTimeParam = (string) Request.Query["end"];
                 DateTime startTime;
                 DateTime endTime;
 
