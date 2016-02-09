@@ -9,13 +9,21 @@ namespace TransactionMonitor.Api
     {
         public static void Write(IEnumerable<TransactionEvent> events, Stream stream)
         {
-            using (var w = XmlWriter.Create(stream))
+            var settings = new XmlWriterSettings
+            {
+                Indent = true,
+                NewLineOnAttributes = true
+            };
+            using (var w = XmlWriter.Create(stream, settings))
             {
                 w.WriteStartDocument();
                 w.WriteStartElement("log");
-                foreach (var transactionEvent in events)
+                if (events != null)
                 {
-                    transactionEvent.WriteXml(w);
+                    foreach (var transactionEvent in events)
+                    {
+                        transactionEvent.WriteXml(w);
+                    }
                 }
                 w.WriteEndElement();
                 w.WriteEndDocument(); 

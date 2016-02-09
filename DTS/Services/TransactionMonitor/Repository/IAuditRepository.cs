@@ -13,7 +13,6 @@ namespace TransactionMonitor.Repository
         void LogErrorEvent(ErrorEvent errorEvent);
         void LogDebugEvent(DebugEvent debugEvent);
 
-        IEnumerable<TransactionEvent> GetLogOfTransaction(Guid transactionId);
         IEnumerable<TransactionEvent> GetLogsForUser(string userId, DateTime start, DateTime end);
         IEnumerable<TransactionEvent> GetAllLogs(DateTime start, DateTime end);
     }

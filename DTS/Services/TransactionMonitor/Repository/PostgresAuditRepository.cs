@@ -274,11 +274,6 @@ namespace TransactionMonitor.Repository
             }
         }
 
-        public IEnumerable<TransactionEvent> GetLogOfTransaction(Guid transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
         public IEnumerable<TransactionEvent> GetLogsForUser(string userId, DateTime start, DateTime end)
         {
             if(userId == null)
