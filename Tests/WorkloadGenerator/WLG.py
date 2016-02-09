@@ -46,7 +46,7 @@ credentials = pika.PlainCredentials('dts_user', 'Group1')
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, int(rabbitPort), '/', credentials))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='WorkloadGenerator',type='direct')
+channel.exchange_declare(exchange='WorkloadGenerator',type='direct', durable=True, auto_delete=True)
 for i in range(1, int(num_Slaves)+1):
 	channel.queue_declare(queue='Slave' +str(i), durable=True)
 

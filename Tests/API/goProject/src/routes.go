@@ -45,7 +45,7 @@ var routes = Routes{
     Route{
     	"CancelBuy",
     	"DELETE",
-    	"/api/users/{id}/pending-sales",
+    	"/api/users/{id}/pending-purchases",
     	CancelBuy,
     },
     Route{

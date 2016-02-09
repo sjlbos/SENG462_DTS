@@ -27,7 +27,7 @@ namespace WorkloadGeneratorSlave
                 _request = WebRequest.Create(Uri);
                 _request.Method = Method;
 
-                if (RequestBody != null)
+                if (!String.IsNullOrWhiteSpace(RequestBody))
                 {
                     var bodyBytes = Encoding.UTF8.GetBytes(RequestBody);
                     _request.ContentLength = bodyBytes.Length;

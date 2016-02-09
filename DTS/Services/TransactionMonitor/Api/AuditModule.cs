@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Xml.Serialization;
 using log4net;
 using Nancy;
 using TransactionEvents;
@@ -25,38 +22,41 @@ namespace TransactionMonitor.Api
             {
                 var startTimeParam = Request.Query["start"];
                 var endTimeParam = Request.Query["end"];
+                DateTime startTime;
+                DateTime endTime;
 
                 try
                 {
-                    var startTime = String.IsNullOrWhiteSpace(startTimeParam)
+                    startTime = String.IsNullOrWhiteSpace(startTimeParam)
                         ? DateTime.MinValue
                         : Convert.ToDateTime(startTimeParam);
-                    var endTime = String.IsNullOrWhiteSpace(endTimeParam)
-                        ? DateTime.MaxValue
-                        : Convert.ToDateTime(endTimeParam);
-
-                    IEnumerable<TransactionEvent> queryResults = _repository.GetAllLogs(startTime, endTime);
-
-                    return new Response
-                    {
-                        StatusCode = HttpStatusCode.OK,
-                        ContentType = "application/xml",
-                        Contents = stream =>
-                        {
-                            XmlLog.Write(queryResults, stream);
-                            stream.Flush();
-                            stream.Close();
-                        },
-                    };
                 }
-                catch (FormatException ex)
+                catch (FormatException)
                 {
                     return new Response
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ReasonPhrase = ex.Message
+                        ReasonPhrase = "Parameter \"start\" is not of a valid format."
                     };
                 }
+
+                try
+                {
+                    endTime = String.IsNullOrWhiteSpace(endTimeParam)
+                        ? DateTime.MaxValue
+                        : Convert.ToDateTime(endTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"end\" is not of a valid format."
+                    };
+                }
+
+                var queryResults = _repository.GetAllLogs(startTime, endTime);
+                return BuildXmlResponse(queryResults);
             };
 
             Get["/transactions/{FileName}"] = parameters =>
@@ -64,20 +64,41 @@ namespace TransactionMonitor.Api
                 var fileName = (string) parameters.FileName;
                 var startTimeParam = Request.Query["start"];
                 var endTimeParam = Request.Query["end"];
-                return BuildFileDownloadResponse(fileName, "Hello World");
-            };
+                DateTime startTime;
+                DateTime endTime;
 
-            Get["/transactions/{Id}"] = parameters =>
-            {
-                var transactionId = parameters.Id;
-                return null;
-            };
+                try
+                {
+                    startTime = String.IsNullOrWhiteSpace(startTimeParam)
+                        ? DateTime.MinValue
+                        : Convert.ToDateTime(startTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"start\" is not of a valid format."
+                    };
+                }
 
-            Get["/transactions/{Id}/{FileName}"] = parameters =>
-            {
-                var transactionId = parameters.Id;
-                var fileName = (string) parameters.FileName;
-                return BuildFileDownloadResponse(fileName, "Hello World");
+                try
+                {
+                    endTime = String.IsNullOrWhiteSpace(endTimeParam)
+                        ? DateTime.MaxValue
+                        : Convert.ToDateTime(endTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"end\" is not of a valid format."
+                    };
+                }
+
+                var queryResults = _repository.GetAllLogs(startTime, endTime);
+                return BuildFileDownloadResponse(fileName, queryResults);
             };
 
             Get["/users/{Id}"] = parameters =>
@@ -85,8 +106,41 @@ namespace TransactionMonitor.Api
                 var userId = parameters.Id;
                 var startTimeParam = Request.Query["start"];
                 var endTimeParam = Request.Query["end"];
+                DateTime startTime;
+                DateTime endTime;
 
-                return null;
+                try
+                {
+                    startTime = String.IsNullOrWhiteSpace(startTimeParam)
+                        ? DateTime.MinValue
+                        : Convert.ToDateTime(startTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"start\" is not of a valid format."
+                    };
+                }
+
+                try
+                {
+                    endTime = String.IsNullOrWhiteSpace(endTimeParam)
+                        ? DateTime.MaxValue
+                        : Convert.ToDateTime(endTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"end\" is not of a valid format."
+                    };
+                }
+
+                var queryResults = _repository.GetLogsForUser(userId, startTime, endTime);
+                return BuildXmlResponse(queryResults);
             };
 
             Get["/users/{Id}/{FileName}"] = parameters =>
@@ -95,12 +149,60 @@ namespace TransactionMonitor.Api
                 var fileName = (string) parameters.FileName;
                 var startTimeParam = Request.Query["start"];
                 var endTimeParam = Request.Query["end"];
+                DateTime startTime;
+                DateTime endTime;
 
-                return BuildFileDownloadResponse(fileName, "Hello World");
+                try
+                {
+                    startTime = String.IsNullOrWhiteSpace(startTimeParam)
+                        ? DateTime.MinValue
+                        : Convert.ToDateTime(startTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"start\" is not of a valid format."
+                    };
+                }
+
+                try
+                {
+                    endTime = String.IsNullOrWhiteSpace(endTimeParam)
+                        ? DateTime.MaxValue
+                        : Convert.ToDateTime(endTimeParam);
+                }
+                catch (FormatException)
+                {
+                    return new Response
+                    {
+                        StatusCode = HttpStatusCode.BadRequest,
+                        ReasonPhrase = "Parameter \"end\" is not of a valid format."
+                    };
+                }
+
+                var queryResults = _repository.GetLogsForUser(userId, startTime, endTime);
+                return BuildFileDownloadResponse(fileName, queryResults);
             };
         }
 
-        private Response BuildFileDownloadResponse(string fileName, string fileContent)
+        private Response BuildXmlResponse(IEnumerable<TransactionEvent> transactionEvents)
+        {
+            return new Response
+            {
+                StatusCode = HttpStatusCode.OK,
+                ContentType = "application/xml",
+                Contents = stream =>
+                {
+                    XmlLog.Write(transactionEvents, stream);
+                    stream.Flush();
+                    stream.Close();
+                },
+            };   
+        }
+
+        private Response BuildFileDownloadResponse(string fileName, IEnumerable<TransactionEvent> transactionEvents)
         {
             var response = new Response();
             response.Headers.Add("Content-Disposition", String.Format(CultureInfo.InvariantCulture,
@@ -108,10 +210,9 @@ namespace TransactionMonitor.Api
             response.ContentType = "application/xml";
             response.Contents = stream =>
             {
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.Write(fileContent);
-                }
+                XmlLog.Write(transactionEvents, stream);
+                stream.Flush();
+                stream.Close();
             };
             return response;
         }
