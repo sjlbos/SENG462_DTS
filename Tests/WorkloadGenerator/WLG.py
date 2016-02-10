@@ -101,7 +101,7 @@ def getAddCommand(User, Amount, Id):
 
 def getQuoteCommand(User, StockSymbol, Id):
 	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol+ "/" + Id
-	return ApiCommand(uri, StockSymbol, Id, "GET", 200)
+	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases" + "/" + Id
