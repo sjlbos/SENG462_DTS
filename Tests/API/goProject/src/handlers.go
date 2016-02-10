@@ -32,21 +32,7 @@ type QuoteServerEvent struct{
     QuoteServerTime time.Time
     Cryptokey       string
 }
-/* 
-q := QuoteServerEvent{
-    EventType       : "QuoteServerEvent",
-    Guid            : "",
-    OccuredAt       : "",
-    Transactionid   : "",
-    UserId          : "",
-    Service         : "",
-    Server          : "",
-    Price           : result[0],
-    StockSymbol     : result[1],
-    QuoteServerTime : tmpResult3,
-    Cryptokey       : tmpResult4
-}
-*/
+
 type UserCommandEvent struct{
     EventType       string
 
@@ -61,26 +47,13 @@ type UserCommandEvent struct{
     StockSymbol     string
     Funds           string
 }
-/* 
-q := UserCommandEvent{
-    EventType       : "QuoteServerEvent",
-    Guid            : "",
-    OccuredAt       : "",
-    Transactionid   : "",
-    UserId          : "",
-    Service         : "",
-    Server          : "",
-    CommandType     : "",
-    StockSymbol     : result[1],
-    Funds           : ""
-}
-*/
+
 type AccountTransactionEvent struct{
     EventType       string
 
-    Guid            int64
+    Guid            string
     OccuredAt       time.Time
-    TransactionId   int64
+    TransactionId   string
     UserId          string
     Service         string
     Server          string
@@ -88,6 +61,19 @@ type AccountTransactionEvent struct{
     AccountAction   string
     Funds           string
 }
+/* 
+q := QuoteServerEvent{
+    EventType       : "AccountTransaction",
+    Guid            : "",
+    OccuredAt       : "",
+    Transactionid   : "",
+    UserId          : "",
+    Service         : "",
+    Server          : "",
+    AccountAction   : "",
+    Funds           : "",
+}
+*/
 
 type SystemEvent struct{
     EventType       string
@@ -195,6 +181,8 @@ func SendRabbitMessage(message interface{}, EventType string){
         q = message.(QuoteServerEvent)
     }else if(EventType == "UserCommandEvent"){
         q = message.(UserCommandEvent)
+    }else if(EventType == "AccountTransactionEvent"){
+	q = message.(AccountTransactionEvent)
     }else{
        panic("NOT YET IMPLEMENTED")
     }
@@ -212,7 +200,7 @@ func SendRabbitMessage(message interface{}, EventType string){
         })
     failOnError(err, "Failed to publish a message")
 
-    log.Printf(" [x] Sent %s", body)
+//    log.Printf(" [x] Sent %s", body)
 
     rconn.Close()
 }
@@ -279,7 +267,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
     QuoteEvent := QuoteServerEvent{
         EventType       : "QuoteServerEvent",
         Guid            : Guid.String(),
-        OccuredAt       : OccuredAt,
+        OccuredAt       : tmpResult3,
         TransactionId   : TransId,
         UserId          : UserId,
         Service         : "QUOTE",
@@ -327,8 +315,19 @@ func Add(w http.ResponseWriter, r *http.Request){
         Funds           : t.Amount,
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-
-
+/*
+    AccountEvent := AccountTransactionEvent{
+        EventType       : "AccountTransactionEvent",
+        Guid            : Guid.String(),
+        OccuredAt       : OccuredAt,
+        TransactionId   : TransId,
+        UserId          : UserId,
+        Service         : "Account",
+        Server          : "B134",
+        AccountAction   : "Add",
+        Funds           : t.Amount,
+    }
+    SendRabbitMessage(AccountEvent,AccountEvent.EventType);*/
 //TODO database stuff!
 
 }
@@ -748,7 +747,7 @@ func DisplaySummary(w http.ResponseWriter, r *http.Request){
         Guid            : Guid.String(),
         OccuredAt       : OccuredAt,
         TransactionId   : TransId,
-        UserId          : "",
+        UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
         CommandType     : "DISPLAY_SUMMARY",
