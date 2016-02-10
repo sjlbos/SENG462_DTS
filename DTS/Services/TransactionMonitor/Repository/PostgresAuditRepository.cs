@@ -7,7 +7,6 @@ using log4net;
 using Npgsql;
 using NpgsqlTypes;
 using TransactionEvents;
-using CommandType = System.Data.CommandType;
 
 namespace TransactionMonitor.Repository
 {
@@ -41,26 +40,25 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting user command event {0} into databse...", userCommandEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, userCommandEvent);
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
-                    NpgsqlDbType = NpgsqlDbType.Enum,
                     Value = userCommandEvent.Command
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Char,
-                    Value = userCommandEvent.StockSymbol
+                    Value =  ((object) userCommandEvent.StockSymbol) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Money,
-                    Value = userCommandEvent.Funds
+                    Value = ((object) userCommandEvent.Funds) ?? DBNull.Value
                 });
 
                 int id = ExecuteInsertCommand(command);
@@ -76,7 +74,7 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting quote server event {0} into databse...", quoteServerEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, quoteServerEvent);
 
@@ -117,7 +115,7 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting account transaction event {0} into databse...", accountTransactionEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, accountTransactionEvent);
 
@@ -145,7 +143,7 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting system event {0} into databse...", systemEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, systemEvent);
 
@@ -158,19 +156,19 @@ namespace TransactionMonitor.Repository
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Char,
-                    Value = systemEvent.StockSymbol
+                    Value = ((object) systemEvent.StockSymbol) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Money,
-                    Value = systemEvent.Funds
+                    Value = ((object) systemEvent.Funds) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Varchar,
-                    Value = systemEvent.FileName
+                    Value = ((object) systemEvent.FileName) ?? DBNull.Value
                 });
 
                 int id = ExecuteInsertCommand(command);
@@ -186,7 +184,7 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting error event {0} into databse...", errorEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, errorEvent);
 
@@ -199,25 +197,25 @@ namespace TransactionMonitor.Repository
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Char,
-                    Value = errorEvent.StockSymbol
+                    Value = ((object) errorEvent.StockSymbol) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Money,
-                    Value = errorEvent.Funds
+                    Value = ((object) errorEvent.Funds) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Varchar,
-                    Value = errorEvent.ErrorMessage
+                    Value = ((object) errorEvent.ErrorMessage) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Varchar,
-                    Value = errorEvent.FileName
+                    Value = ((object) errorEvent.FileName) ?? DBNull.Value
                 });
 
                 int id = ExecuteInsertCommand(command);
@@ -233,7 +231,7 @@ namespace TransactionMonitor.Repository
             {
                 Log.DebugFormat("Inserting debug event {0} into databse...", debugEvent.Id);
 
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 AddCommonEventPropertyParametersToCommand(command, debugEvent);
 
@@ -246,25 +244,25 @@ namespace TransactionMonitor.Repository
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Char,
-                    Value = debugEvent.StockSymbol
+                    Value = ((object) debugEvent.StockSymbol) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Money,
-                    Value = debugEvent.Funds
+                    Value = ((object) debugEvent.Funds) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Varchar,
-                    Value = debugEvent.FileName
+                    Value = ((object) debugEvent.FileName) ?? DBNull.Value
                 });
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
                     NpgsqlDbType = NpgsqlDbType.Varchar,
-                    Value = debugEvent.DebugMessage
+                    Value = ((object) debugEvent.DebugMessage) ?? DBNull.Value
                 });
 
                 int id = ExecuteInsertCommand(command);
@@ -285,7 +283,7 @@ namespace TransactionMonitor.Repository
 
             using (var command = new NpgsqlCommand("get_all_events_by_user"))
             {
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
@@ -326,7 +324,7 @@ namespace TransactionMonitor.Repository
 
             using (var command = new NpgsqlCommand("get_all_events"))
             {
-                command.CommandType = CommandType.StoredProcedure;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 command.Parameters.Add(new NpgsqlParameter
                 {
@@ -499,9 +497,9 @@ namespace TransactionMonitor.Repository
         {
             var userCommandEvent = new UserCommandEvent
             {
-                Command = (TransactionEvents.CommandType) reader.GetValue(8),
-                StockSymbol = reader.GetString(9),
-                Funds = reader.GetDecimal(10)
+                Command = (CommandType) reader.GetValue(8),
+                StockSymbol = (reader.IsDBNull(9)) ? null : reader.GetString(9),
+                Funds = (reader.IsDBNull(10)) ? null : (decimal?) reader.GetDecimal(10)
             };
             FillBaseEventPropertiesFromRecord(userCommandEvent, reader);
             return userCommandEvent;
@@ -535,10 +533,10 @@ namespace TransactionMonitor.Repository
         {
             var systemEvent = new SystemEvent
             {
-                Command = (TransactionEvents.CommandType)reader.GetValue(8),
-                StockSymbol = reader.GetString(9),
-                Funds = reader.GetDecimal(10),
-                FileName = reader.GetString(11)
+                Command = (CommandType)reader.GetValue(8),
+                StockSymbol = (reader.IsDBNull(9)) ? null : reader.GetString(9),
+                Funds = (reader.IsDBNull(10)) ? null : (decimal?) reader.GetDecimal(10),
+                FileName = (reader.IsDBNull(11)) ? null : reader.GetString(11)
             };
             FillBaseEventPropertiesFromRecord(systemEvent, reader);
             return systemEvent;
@@ -548,11 +546,11 @@ namespace TransactionMonitor.Repository
         {
             var errorEvent = new ErrorEvent
             {
-                Command = (TransactionEvents.CommandType)reader.GetValue(8),
-                StockSymbol = reader.GetString(9),
-                Funds = reader.GetDecimal(10),
-                FileName = reader.GetString(11),
-                ErrorMessage = reader.GetString(12)
+                Command = (CommandType)reader.GetValue(8),
+                StockSymbol = (reader.IsDBNull(9)) ? null : reader.GetString(9),
+                Funds = (reader.IsDBNull(10)) ? null : (decimal?) reader.GetDecimal(10),
+                FileName = (reader.IsDBNull(11)) ? null : reader.GetString(11),
+                ErrorMessage = (reader.IsDBNull(12)) ? null : reader.GetString(12)
             };
             FillBaseEventPropertiesFromRecord(errorEvent, reader);
             return errorEvent;
@@ -562,11 +560,11 @@ namespace TransactionMonitor.Repository
         {
             var debugEvent = new DebugEvent
             {
-                Command = (TransactionEvents.CommandType)reader.GetValue(8),
-                StockSymbol = reader.GetString(9),
-                Funds = reader.GetDecimal(10),
-                FileName = reader.GetString(11),
-                DebugMessage = reader.GetString(12)
+                Command = (CommandType)reader.GetValue(8),
+                StockSymbol = (reader.IsDBNull(9)) ? null : reader.GetString(9),
+                Funds = (reader.IsDBNull(10)) ? null : (decimal?) reader.GetDecimal(10),
+                FileName = (reader.IsDBNull(11)) ? null : reader.GetString(11),
+                DebugMessage = (reader.IsDBNull(12)) ? null : reader.GetString(12)
             };
             FillBaseEventPropertiesFromRecord(debugEvent, reader);
             return debugEvent;

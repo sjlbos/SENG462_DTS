@@ -20,7 +20,7 @@ namespace TransactionMonitor
             }
             catch (Exception ex)
             {
-                log.Fatal("The Workload Generator slave encountered a fatal error.", ex);
+                log.Fatal("The Transaction Monitor Service encountered a fatal error.", ex);
             }
         }
     }

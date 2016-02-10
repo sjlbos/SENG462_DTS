@@ -33,7 +33,7 @@ namespace TransactionMonitor
             try
             {
                 var transactionEvent = JsonConvert.DeserializeObject<TransactionEvent>(message, _deserializer);
-                Log.DebugFormat(CultureInfo.InvariantCulture, "Worker {0} received transaction message with Id=\"{1}\".", InstanceId, transactionEvent.Id);
+                Log.InfoFormat(CultureInfo.InvariantCulture, "Worker {0} received transaction message with Id=\"{1}\".", InstanceId, transactionEvent.Id);
                 _eventBuffer.Add(transactionEvent);
             }
             catch (UnrecognizedTransactionEventException ex)
