@@ -228,8 +228,9 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION get_user_triggers(_uid int)
+CREATE FUNCTION get_all_triggers(_uid int)
 RETURNS TABLE (	id int, 
+				uid int,
 				stock char(3), 
 				type trigger_type, 
 				trigger_price money, 
@@ -237,13 +238,134 @@ RETURNS TABLE (	id int,
 				created_at timestamptz) AS
 $$
 	SELECT 	id,
+			uid,
+			stock,
+			type,
+			trigger_price,
+			num_shares,
+			created_at
+	FROM triggers;
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE FUNCTION get_trigger_by_id(_id int)
+RETURNS TABLE (	id int, 
+				uid int,
+				stock char(3), 
+				type trigger_type, 
+				trigger_price money, 
+				num_shares int, 
+				created_at timestamptz) AS
+$$
+	SELECT 	id,
+			uid,
 			stock,
 			type,
 			trigger_price,
 			num_shares,
 			created_at
 	FROM triggers
-	WHERE uid = _uid;
+	WHERE id = _id;
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE FUNCTION get_user_buy_triggers(_uid int)
+RETURNS TABLE (	id int, 
+				uid int,
+				stock char(3), 
+				type trigger_type, 
+				trigger_price money, 
+				num_shares int, 
+				created_at timestamptz) AS
+$$
+	SELECT 	id,
+			uid,
+			stock,
+			type,
+			trigger_price,
+			num_shares,
+			created_at
+	FROM triggers
+	WHERE 	uid = _uid 
+		AND type = 'buy';
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE FUNCTION get_user_sell_triggers(_uid int)
+RETURNS TABLE (	id int, 
+				uid int,
+				stock char(3), 
+				type trigger_type, 
+				trigger_price money, 
+				num_shares int, 
+				created_at timestamptz) AS
+$$
+	SELECT 	id,
+			uid,
+			stock,
+			type,
+			trigger_price,
+			num_shares,
+			created_at
+	FROM triggers
+	WHERE 	uid = _uid 
+		AND type = 'sell';
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE FUNCTION get_buy_trigger_for_user_and_stock(_uid int, _stock char(3))
+RETURNS TABLE (	id int, 
+				uid int,
+				stock char(3), 
+				type trigger_type, 
+				trigger_price money, 
+				num_shares int, 
+				created_at timestamptz) AS
+$$
+	SELECT 	id,
+			uid,
+			stock,
+			type,
+			trigger_price,
+			num_shares,
+			created_at
+	FROM triggers
+	WHERE uid = _uid
+		AND stock = _stock
+		AND type = 'buy';
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE FUNCTION get_sell_trigger_for_user_and_stock(_uid int, _stock char(3))
+RETURNS TABLE (	id int, 
+				uid int,
+				stock char(3), 
+				type trigger_type, 
+				trigger_price money, 
+				num_shares int, 
+				created_at timestamptz) AS
+$$
+	SELECT 	id,
+			uid,
+			stock,
+			type,
+			trigger_price,
+			num_shares,
+			created_at
+	FROM triggers
+	WHERE uid = _uid 
+		AND stock = _stock
+		AND type = 'sell';
 $$
 LANGUAGE SQL VOLATILE;
 
@@ -376,42 +498,6 @@ $$
 	UPDATE triggers 
 	SET trigger_price = _trigger_price 
 	WHERE id = _id;
-$$
-LANGUAGE SQL VOLATILE;
-
-
-
-CREATE FUNCTION get_buy_trigger_for_user_and_stock(_uid int, _stock char(3))
-RETURNS TABLE (id int, stock char(3), type trigger_type, trigger_price money, num_shares int, created_at timestamptz) AS
-$$
-	SELECT 	id,
-			stock,
-			type,
-			trigger_price,
-			num_shares,
-			created_at
-	FROM triggers
-	WHERE uid = _uid
-		AND stock = _stock
-		AND type = 'buy';
-$$
-LANGUAGE SQL VOLATILE;
-
-
-
-CREATE FUNCTION get_sell_trigger_for_user_and_stock(_uid int, _stock char(3))
-RETURNS TABLE (id int, stock char(3), type trigger_type, trigger_price money, num_shares int, created_at timestamptz) AS
-$$
-	SELECT 	id,
-			stock,
-			type,
-			trigger_price,
-			num_shares,
-			created_at
-	FROM triggers
-	WHERE uid = _uid 
-		AND stock = _stock
-		AND type = 'sell';
 $$
 LANGUAGE SQL VOLATILE;
 
