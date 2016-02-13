@@ -19,7 +19,7 @@ namespace WorkloadGeneratorSlave
         protected override IList<IWorker> GetWorkerList()
         {
             var receiver = RabbitMessengerFactory.GetReceiver("WorkloadQueueReceiver");
-            var worker = new WorkloadQueueMonitor("1", receiver, _numberOfWorkers);
+            var worker = new WorkloadQueueMonitor("QueueMonitor", receiver, _numberOfWorkers);
             return new[] {worker};
         }
     }
