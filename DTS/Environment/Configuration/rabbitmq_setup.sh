@@ -17,5 +17,5 @@ cd $INSTALL_ROOT
 # Add and Configure User
 ./rabbitmqctl add_user dts_user Group1
 
-./rabbitmqctl set_permissions -p / dts_user "^dts_user-.*" ".*" ".*"
+./rabbitmqctl set_permissions -p / dts_user ".*" ".*" ".*"
 
