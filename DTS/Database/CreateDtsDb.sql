@@ -1,13 +1,22 @@
-CREATE TABLE users(
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS portfolios CASCADE;
+DROP TYPE IF EXISTS trigger_type CASCADE;
+DROP TABLE IF EXISTS triggers CASCADE;
+DROP TYPE IF EXISTS transaction_type CASCADE;
+DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS pending_transactions CASCADE;
+
+
+CREATE TABLE IF NOT EXISTS users(
 	id SERIAL PRIMARY KEY,
-	user_id char(10) NOT NULL UNIQUE,
+	user_id varchar NOT NULL UNIQUE,
 	balance money NOT NULL DEFAULT 0.00 CHECK(balance > 0::money),
-	created_at timestamptz NOT NULL
+	created_at timestamptz default current_timestamp
 );
 
-CREATE TABLE portfolios(
+CREATE TABLE IF NOT EXISTS portfolios(
 	uid int NOT NULL,
-	stock char(3) NOT NULL,
+	stock varchar NOT NULL,
 	num_shares int NOT NULL CHECK(num_shares > 0),
 	FOREIGN KEY (uid) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
 	UNIQUE(uid, stock)
@@ -15,10 +24,10 @@ CREATE TABLE portfolios(
 
 CREATE TYPE trigger_type AS ENUM ('buy', 'sell');
 
-CREATE TABLE triggers(
+CREATE TABLE IF NOT EXISTS triggers(
 	id SERIAL PRIMARY KEY,
 	uid int NOT NULL,
-	stock char(3) NOT NULL,
+	stock varchar NOT NULL,
 	type trigger_type NOT NULL,
 	trigger_price money CHECK(trigger_price >= 0::money),
 	num_shares int NOT NULL CHECK(num_shares > 0),
@@ -29,22 +38,22 @@ CREATE TABLE triggers(
 
 CREATE TYPE transaction_type AS ENUM ('sale', 'purchase');
 
-CREATE TABLE transactions(
+CREATE TABLE IF NOT EXISTS transactions(
 	id SERIAL PRIMARY KEY,
 	uid int NOT NULL,
 	type transaction_type NOT NULL,
-	stock char(3) NOT NULL,
+	stock varchar NOT NULL,
 	num_shares int NOT NULL CHECK(num_shares > 0),
 	share_price money NOT NULL CHECK(share_price >= 0::money),
 	made_at timestamptz NOT NULL,
 	FOREIGN KEY (uid) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE pending_transactions(
+CREATE TABLE IF NOT EXISTS pending_transactions(
 	id SERIAL PRIMARY KEY,
 	uid int NOT NULL,
 	type transaction_type NOT NULL,
-	stock char(3) NOT NULL,
+	stock varchar NOT NULL,
 	num_shares int NOT NULL CHECK(num_shares > 0),
 	share_price money NOT NULL CHECK(share_price >= 0::money),
 	requested_at timestamptz NOT NULL,
@@ -54,7 +63,7 @@ CREATE TABLE pending_transactions(
 
 
 
-CREATE FUNCTION get_reserved_funds (_uid int) RETURNS money AS
+CREATE OR REPLACE FUNCTION get_reserved_funds (_uid int) RETURNS money AS
 $$
 	SELECT SUM(value)
 	FROM(
@@ -67,7 +76,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION add_user_account(_user_id char(10), _balance money)
+CREATE OR REPLACE FUNCTION add_user_account(_user_id varchar, _balance money, _created_at timestamptz)
 RETURNS int AS
 $$
 	INSERT INTO users(user_id, balance)
@@ -78,7 +87,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION update_user_account_balance(_uid int, _balance money) 
+CREATE OR REPLACE FUNCTION update_user_account_balance(_uid int, _balance money) 
 RETURNS void AS
 $$
 	UPDATE users
@@ -89,8 +98,8 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_account_by_char_id(_user_id char(10))
-RETURNS TABLE(id int, user_id char(10), balance money) AS
+CREATE OR REPLACE FUNCTION get_user_account_by_char_id(_user_id varchar)
+RETURNS TABLE(id int, user_id varchar, balance money) AS
 $$
 	SELECT 	id,
 			user_id,
@@ -102,8 +111,8 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_portfolio(_uid int)
-RETURNS TABLE(stock char(3), num_shares int) AS
+CREATE OR REPLACE FUNCTION get_user_portfolio(_uid int)
+RETURNS TABLE(stock varchar, num_shares int) AS
 $$
 	SELECT 	stock,
 			num_shares
@@ -114,7 +123,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_stock_amount(_uid int, _stock char(3))
+CREATE OR REPLACE FUNCTION get_user_stock_amount(_uid int, _stock varchar)
 RETURNS int AS
 $$ 
 	SELECT num_shares
@@ -125,9 +134,9 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION perform_purchase_transaction(
+CREATE OR REPLACE FUNCTION perform_purchase_transaction(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_num_shares int,
 	_share_price money,
 	_made_at timestamptz
@@ -176,9 +185,9 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION perform_sale_transaction(
+CREATE OR REPLACE FUNCTION perform_sale_transaction(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_num_shares int,
 	_share_price money,
 	_made_at timestamptz
@@ -228,10 +237,10 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION get_all_triggers(_uid int)
+CREATE OR REPLACE FUNCTION get_all_triggers(_uid int)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -250,10 +259,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_trigger_by_id(_id int)
+CREATE OR REPLACE FUNCTION get_trigger_by_id(_id int)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -273,10 +282,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_buy_triggers(_uid int)
+CREATE OR REPLACE FUNCTION get_user_buy_triggers(_uid int)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -297,10 +306,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_sell_triggers(_uid int)
+CREATE OR REPLACE FUNCTION get_user_sell_triggers(_uid int)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -321,10 +330,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_buy_trigger_for_user_and_stock(_uid int, _stock char(3))
+CREATE OR REPLACE FUNCTION get_buy_trigger_for_user_and_stock(_uid int, _stock varchar)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -346,10 +355,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_sell_trigger_for_user_and_stock(_uid int, _stock char(3))
+CREATE OR REPLACE FUNCTION get_sell_trigger_for_user_and_stock(_uid int, _stock varchar)
 RETURNS TABLE (	id int, 
 				uid int,
-				stock char(3), 
+				stock varchar, 
 				type trigger_type, 
 				trigger_price money, 
 				num_shares int, 
@@ -371,9 +380,9 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION add_buy_trigger(
+CREATE OR REPLACE FUNCTION add_buy_trigger(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_trigger_price money,
 	_num_shares int,
 	_created_at timestamptz
@@ -402,7 +411,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION commit_buy_trigger(
+CREATE OR REPLACE FUNCTION commit_buy_trigger(
 	_id int,
 	_made_at timestamptz
 )
@@ -430,7 +439,7 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION commit_sell_trigger(
+CREATE OR REPLACE FUNCTION commit_sell_trigger(
 	_id int,
 	_made_at timestamptz
 )
@@ -458,9 +467,9 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION add_sell_trigger(
+CREATE OR REPLACE FUNCTION add_sell_trigger(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_trigger_price money,
 	_num_shares int,
 	_created_at timestamptz
@@ -489,7 +498,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION set_trigger_price(
+CREATE OR REPLACE FUNCTION set_trigger_price(
 	_id int,
 	_trigger_price money
 )
@@ -503,7 +512,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION cancel_trigger(
+CREATE OR REPLACE FUNCTION cancel_trigger(
 	_id int
 )
 RETURNS void AS
@@ -515,10 +524,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_user_transaction_history(
+CREATE OR REPLACE FUNCTION get_user_transaction_history(
 	_uid int
 )
-RETURNS TABLE (id int, type transaction_type, stock char(3), num_shares int, share_price money, made_at timestamptz) AS
+RETURNS TABLE (id int, type transaction_type, stock varchar, num_shares int, share_price money, made_at timestamptz) AS
 $$
 	SELECT 	id,
 			type,
@@ -533,9 +542,9 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION add_pending_purchase(
+CREATE OR REPLACE FUNCTION add_pending_purchase(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_num_shares int,
 	_share_price money,
 	_requested_at timestamptz,
@@ -567,9 +576,9 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION add_pending_sale(
+CREATE OR REPLACE FUNCTION add_pending_sale(
 	_uid int,
-	_stock char(3),
+	_stock varchar,
 	_num_shares int,
 	_share_price money,
 	_requested_at timestamptz,
@@ -601,10 +610,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_latest_pending_purchase_for_user(
+CREATE OR REPLACE FUNCTION get_latest_pending_purchase_for_user(
 	_uid int
 )
-RETURNS TABLE(id int, uid int, stock char(3), num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
+RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
 	SELECT	id,
 			uid,
@@ -622,10 +631,10 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION get_all_pending_purchases_for_user(
+CREATE OR REPLACE FUNCTION get_all_pending_purchases_for_user(
 	_uid int
 )
-RETURNS TABLE(id int, uid int, stock char(3), num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
+RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
 	SELECT	id,
 			uid,
@@ -641,7 +650,7 @@ $$
 LANGUAGE SQL VOLATILE;
 
 
-CREATE FUNCTION commit_pending_purchase(
+CREATE OR REPLACE FUNCTION commit_pending_purchase(
 	_id int,
 	_made_at timestamptz
 )
@@ -669,10 +678,10 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION get_latest_pending_sale(
-	_user_id char(10)
+CREATE OR REPLACE FUNCTION get_latest_pending_sale(
+	_user_id varchar
 )
-RETURNS TABLE(id int, uid int, stock char(3), num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
+RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
 DECLARE
 	_uid int;
@@ -699,10 +708,10 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION get_all_pending_sales_for_user(
+CREATE OR REPLACE FUNCTION get_all_pending_sales_for_user(
 	_uid int
 )
-RETURNS TABLE(id int, uid int, stock char(3), num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
+RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
 	SELECT	id,
 			uid,
@@ -719,7 +728,7 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE FUNCTION commit_pending_sale(
+CREATE OR REPLACE FUNCTION commit_pending_sale(
 	_id int,
 	_made_at timestamptz
 )
@@ -747,7 +756,7 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE FUNCTION cancel_pending_transaction(
+CREATE OR REPLACE FUNCTION cancel_pending_transaction(
 	_id int
 )
 RETURNS void AS
