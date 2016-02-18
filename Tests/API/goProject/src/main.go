@@ -14,8 +14,9 @@ import (
 const (
     DB_USER     = "dts_user"
     DB_PASSWORD = "Group1"
-    DB_NAME     = "DTS"
+    DB_NAME     = "dts"
     DB_PORT     = "44410"
+    DB_HOST     = "B133.seng.uvic.ca"
 //    DB_CONNECTION = "dts_user:Group1@tcp(localhost:44410)/DTS"
 )
 
@@ -24,6 +25,8 @@ var rabbitConnectionString string
 var rabbitAudit bool
 var db *sql.DB
 var err error
+var rconn *amqp.Connection
+var ch *amqp.Channel
 
 var getUserId string = "SELECT * FROM \"get_user_account_by_char_id\"($1)"
 var addUser string = "SELECT * FROM \"add_user_account\"($1::varchar, $2::money, $3::timestamptz)"
@@ -53,20 +56,22 @@ func main() {
     rabbitConnectionString = "amqp://dts_user:Group1@" + rhost + ":" + rport + "/"
 
 
-    dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
+    dbinfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
     db, err = sql.Open("postgres", dbinfo)
     failOnError(err, "Failed to connect to DTS Database")
+
+    db.SetMaxIdleConns(5)
 
     Hostname, err := os.Hostname()
     println("Running on :", Hostname)
 
     router := NewRouter()
     
-    rconn, err := amqp.Dial(rabbitConnectionString)
+    rconn, err = amqp.Dial(rabbitConnectionString)
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()
 
-    ch, err := rconn.Channel()
+    ch, err = rconn.Channel()
     failOnError(err, "Failed to open a channel")
     defer ch.Close()
 
@@ -80,7 +85,6 @@ func main() {
             nil,          // arguments
     )
     failOnError(err, "Failed to declare an exchange")
-    rconn.Close()
 
     RouterPort := ":" + port
     log.Fatal(http.ListenAndServe(RouterPort, router))

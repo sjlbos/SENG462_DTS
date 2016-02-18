@@ -195,14 +195,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendRabbitMessage(message interface{}, EventType string){
-    rconn, err := amqp.Dial(rabbitConnectionString)
-    failOnError(err, "Failed to connect to RabbitMQ")
-    defer rconn.Close()
-
-    ch, err := rconn.Channel()
-    failOnError(err, "Failed to open a channel")
-    defer ch.Close()
-    
     q := message
 
     if(EventType == "QuoteServerEvent"){
@@ -231,10 +223,6 @@ func SendRabbitMessage(message interface{}, EventType string){
                 Body:        []byte(body),
         })
     failOnError(err, "Failed to publish a message")
-
-//    log.Printf(" [x] Sent %s", body)
-
-    rconn.Close()
 }
 
 

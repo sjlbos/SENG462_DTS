@@ -117,7 +117,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
     }
     if(found == false){
         Error := ErrorEvent{
-            EventType       : "DebugEvent",
+            EventType       : "ErrorEvent",
             Guid            : Guid.String(),
             OccuredAt       : time.Now(),
             TransactionId   : TransId,
@@ -176,7 +176,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 
     if(found == false){
         Error := ErrorEvent{
-            EventType       : "DebugEvent",
+            EventType       : "ErrorEvent",
             Guid            : Guid.String(),
             OccuredAt       : time.Now(),
             TransactionId   : TransId,
@@ -207,7 +207,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
         } 
         if(found == false){
             Error := ErrorEvent{
-                EventType       : "DebugEvent",
+                EventType       : "ErrorEvent",
                 Guid            : Guid.String(),
                 OccuredAt       : time.Now(),
                 TransactionId   : TransId,
@@ -266,7 +266,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 
     if(found == false){
         Error := ErrorEvent{
-            EventType       : "DebugEvent",
+            EventType       : "ErrorEvent",
             Guid            : Guid.String(),
             OccuredAt       : time.Now(),
             TransactionId   : TransId,
