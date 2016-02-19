@@ -685,7 +685,7 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE OR REPLACE FUNCTION get_latest_pending_sale(
+CREATE OR REPLACE FUNCTION get_latest_pending_sale_for_user(
 	_user_id varchar
 )
 RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
