@@ -35,6 +35,7 @@ namespace RabbitMessaging
             {
                 HostName = hostConfig.HostName,
                 VirtualHost = hostConfig.VirtualHost,
+                Port = hostConfig.Port,
                 UserName = hostConfig.Username,
                 Password = hostConfig.Password
             };

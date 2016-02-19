@@ -237,7 +237,7 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 
-CREATE OR REPLACE FUNCTION get_all_triggers(_uid int)
+CREATE OR REPLACE FUNCTION get_all_triggers()
 RETURNS TABLE (	id int, 
 				uid int,
 				stock varchar, 

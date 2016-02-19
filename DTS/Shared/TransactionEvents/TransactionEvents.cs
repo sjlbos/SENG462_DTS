@@ -22,10 +22,16 @@ namespace TransactionEvents
 
         protected void WriteCommonPropertyXml(XmlWriter w)
         {
-            w.WriteElementString("timestamp", OccuredAt.Ticks.ToString(CultureInfo.InvariantCulture));
+            w.WriteElementString("timestamp", GetTimestampString(OccuredAt));
             w.WriteElementString("transactionNum", TransactionId.ToString(CultureInfo.InvariantCulture));
             w.WriteElementString("username", UserId);
             w.WriteElementString("server", Server);
+        }
+
+        // The XML log file requires milliseconds since epoch as time string
+        protected string GetTimestampString(DateTime dateTime)
+        {
+            return ((ulong) dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
         }
     }
 
@@ -47,7 +53,7 @@ namespace TransactionEvents
             }
             if (Funds != null)
             {
-                w.WriteElementString("funds", Funds.Value.ToString("#.##"));
+                w.WriteElementString("funds", Funds.Value.ToString("N2"));
             }
             w.WriteEndElement();
         }
@@ -66,7 +72,7 @@ namespace TransactionEvents
             WriteCommonPropertyXml(w);
             w.WriteElementString("price", Price.ToString("N2"));
             w.WriteElementString("stockSymbol", StockSymbol);
-            w.WriteElementString("quoteSeverTime", QuoteServerTime.Ticks.ToString(CultureInfo.InvariantCulture));
+            w.WriteElementString("quoteServerTime", GetTimestampString(QuoteServerTime));
             w.WriteElementString("cryptokey", CryptoKey);
             w.WriteEndElement();
         }
@@ -94,16 +100,25 @@ namespace TransactionEvents
         [JsonConverter(typeof(StringEnumConverter))]
         public CommandType Command { get; set; }
         public string StockSymbol { get; set; }
-        public Decimal Funds { get; set; }
+        public Decimal? Funds { get; set; }
         public string FileName { get; set; }
         public override void WriteXml(XmlWriter w)
         {
             w.WriteStartElement("systemEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            w.WriteElementString("stockSymbol", StockSymbol);
-            w.WriteElementString("funds", Funds.ToString("N2"));
-            w.WriteElementString("filename", FileName);
+            if (StockSymbol != null)
+            {
+                w.WriteElementString("stockSymbol", StockSymbol);
+            }
+            if (Funds.HasValue)
+            {
+                w.WriteElementString("funds", Funds.Value.ToString("N2")); 
+            }
+            if (FileName != null)
+            {
+                w.WriteElementString("filename", FileName);
+            }
             w.WriteEndElement();
         }
     }
@@ -113,7 +128,7 @@ namespace TransactionEvents
         [JsonConverter(typeof(StringEnumConverter))]
         public CommandType Command { get; set; }
         public string StockSymbol { get; set; }
-        public Decimal Funds { get; set; }
+        public Decimal? Funds { get; set; }
         public string ErrorMessage { get; set; }
         public string FileName { get; set; }
 
@@ -122,10 +137,22 @@ namespace TransactionEvents
             w.WriteStartElement("errorEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            w.WriteElementString("stockSymbol", StockSymbol);
-            w.WriteElementString("funds", Funds.ToString("N2"));
-            w.WriteElementString("errorMessage", ErrorMessage);
-            w.WriteElementString("filename", FileName);
+            if (StockSymbol != null)
+            {
+                w.WriteElementString("stockSymbol", StockSymbol);
+            }
+            if (Funds.HasValue)
+            {
+                w.WriteElementString("funds", Funds.Value.ToString("N2"));
+            }
+            if (FileName != null)
+            {
+                w.WriteElementString("filename", FileName);
+            }
+            if (ErrorMessage != null)
+            {
+                w.WriteElementString("errorMessage", ErrorMessage);
+            }
             w.WriteEndElement();
         }
     }
@@ -135,7 +162,7 @@ namespace TransactionEvents
         [JsonConverter(typeof(StringEnumConverter))]
         public CommandType Command { get; set; }
         public string StockSymbol { get; set; }
-        public Decimal Funds { get; set; }
+        public Decimal? Funds { get; set; }
         public string FileName { get; set; }
         public string DebugMessage { get; set; }
 
@@ -144,10 +171,22 @@ namespace TransactionEvents
             w.WriteStartElement("debugEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            w.WriteElementString("stockSymbol", StockSymbol);
-            w.WriteElementString("funds", Funds.ToString("N2"));
-            w.WriteElementString("debugMessage", DebugMessage);
-            w.WriteElementString("filename", FileName);
+            if (StockSymbol != null)
+            {
+                w.WriteElementString("stockSymbol", StockSymbol);
+            }
+            if (Funds.HasValue)
+            {
+                w.WriteElementString("funds", Funds.Value.ToString("N2"));
+            }
+            if (FileName != null)
+            {
+                w.WriteElementString("filename", FileName);
+            }
+            if (DebugMessage != null)
+            {
+                w.WriteElementString("errorMessage", DebugMessage);
+            }
             w.WriteEndElement();
         }
     }

@@ -41,9 +41,12 @@ echo "host samerole all samenet md5" >> $DATA_DIR/pg_hba.conf
 # Configure port
 sed -i "s/#port = 5432/port = $PORT/" $DATA_DIR/postgresql.conf
 
+# Enable remote access
+sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $DATA_DIR/postgresql.conf
+
 # Start server
 $INSTALL_DIR/bin/pg_ctl start -w -D $DATA_DIR -l $DATA_DIR/logfile.txt
 
 # Create dts_user account
 echo "CREATE USER dts_user WITH PASSWORD '$DTS_USER_PASSWORD';" | $INSTALL_DIR/bin/psql -d postgres -p $PORT
-
+echo "ALTER USER dts_user CREATEDB;" | $INSTALL_DIR/bin/psql -d postgres -p $PORT
