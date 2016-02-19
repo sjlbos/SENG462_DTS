@@ -48,4 +48,5 @@ sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $DATA_DIR/pos
 $INSTALL_DIR/bin/pg_ctl start -w -D $DATA_DIR -l $DATA_DIR/logfile.txt
 
 # Create dts_user account
-echo "CREATE USER dts_user WITH PASSWORD '$DTS_USER_PASSWORD'; ALTER USER dts_user CREATEDB;" | $INSTALL_DIR/bin/psql -d postgres -p $PORT
+echo "CREATE USER dts_user WITH PASSWORD '$DTS_USER_PASSWORD';" | $INSTALL_DIR/bin/psql -d postgres -p $PORT
+echo "ALTER USER dts_user CREATEDB;" | $INSTALL_DIR/bin/psql -d postgres -p $PORT
