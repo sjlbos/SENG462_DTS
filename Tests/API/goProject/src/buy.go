@@ -10,6 +10,7 @@ import (
     "strings"
     "strconv"
     "time"
+    "math"
 //    "io/ioutil"
 
     "github.com/gorilla/mux"
@@ -20,7 +21,7 @@ import (
 func Buy(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Sell Request:")
     type buy_struct struct {
-        Amount string
+        Amount float64
         Symbol string
     }
     vars := mux.Vars(r)
@@ -33,6 +34,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
     if err != nil {
 
     }
+    strAmount := strconv.FormatFloat(t.Amount, 'f', -1, 64)
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, t.Amount)
     fmt.Fprintln(w, t.Symbol)
@@ -49,7 +51,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
         Server          : Hostname,
         CommandType     : "BUY",
         StockSymbol     : t.Symbol,
-        Funds           : t.Amount,
+        Funds           : strAmount,
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
  
@@ -105,7 +107,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
 
 
     rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement")
+    failOnError(err, "Failed to Create Statement, getUserID for buy")
     found := false
     var id int
     var userid string
@@ -126,14 +128,33 @@ func Buy(w http.ResponseWriter, r *http.Request){
             Server          : Hostname,
             Command         : "ADD",
             StockSymbol     : "",
-            Funds           : t.Amount,
+            Funds           : strAmount,
             FileName        : "",
             ErrorMessage    : "User Account Does Not Exist",   
         }
         SendRabbitMessage(Error,Error.EventType)
     }else{
-        _, err := db.Query(addPendingPurchase, id, t.Symbol, t.Amount, QuoteEvent.Price, time.Now(), time.Now().Add(time.Second*60))
-        failOnError(err, "Failed to Create Statement")
+	
+	quotePrice, err := strconv.ParseFloat(QuoteEvent.Price, 64)
+	toBuy := math.Floor(t.Amount/ quotePrice)
+        _, err = db.Query(addPendingPurchase, id, t.Symbol, toBuy, QuoteEvent.Price, time.Now(), time.Now().Add(time.Second*60))
+        if(err != nil){
+		Error := ErrorEvent{
+		    EventType       : "ErrorEvent",
+		    Guid            : Guid.String(),
+		    OccuredAt       : time.Now(),
+		    TransactionId   : TransId,
+		    UserId          : UserId,
+		    Service         : "API",
+		    Server          : Hostname,
+		    Command         : "ADD",
+		    StockSymbol     : "",
+		    Funds           : strAmount,
+		    FileName        : "",
+		    ErrorMessage    : "Not Enough Money in Account",   
+		}
+		SendRabbitMessage(Error,Error.EventType)
+	}
     }
     
 }
@@ -163,7 +184,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
     SendRabbitMessage(CommandEvent,CommandEvent.EventType); 
 //TODO database Stuff
     rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement")
+    failOnError(err, "Failed to Create Statement getUserId for commitBuy")
     found := false
     var id int
     var userid string
@@ -192,7 +213,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
         SendRabbitMessage(Error,Error.EventType)        
     }else{
         rows, err := db.Query(getLatestPendingPurchase, id)
-        failOnError(err, "Failed to Create Statement")
+        failOnError(err, "Failed to Create Statement getLastestPendingPurchase for commitBuy")
         var id int
         var uid int 
         var stock string
@@ -223,7 +244,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
             _, err := db.Query(commitPurchase, id, time.Now())
-            failOnError(err, "Error with DB Query")
+            failOnError(err, "Error with DB Query commitPurchase")
         }   
     }
 }
@@ -282,7 +303,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
         SendRabbitMessage(Error,Error.EventType)        
     }else{
         rows, err := db.Query(getLatestPendingPurchase, id)
-        failOnError(err, "Failed to Create Statement")
+        failOnError(err, "Failed to Create Statement: getLatestPurchase for cancelBuy")
         var id int
         var uid int 
         var stock string
@@ -297,7 +318,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
         } 
         if(found == false){
             Error := ErrorEvent{
-                EventType       : "DebugEvent",
+                EventType       : "ErrorEvent",
                 Guid            : Guid.String(),
                 OccuredAt       : time.Now(),
                 TransactionId   : TransId,
@@ -313,7 +334,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
             _, err := db.Query(cancelPurchase, id)
-            failOnError(err, "Error with DB Query")
+            failOnError(err, "Error with DB Query: cancelPurchase for cancelBuy")
 
         }   
     }

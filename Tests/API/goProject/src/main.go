@@ -31,10 +31,10 @@ var ch *amqp.Channel
 var getUserId string = "SELECT * FROM \"get_user_account_by_char_id\"($1)"
 var addUser string = "SELECT * FROM \"add_user_account\"($1::varchar, $2::money, $3::timestamptz)"
 var updateBalance string = "SELECT * FROM \"update_user_account_balance\"($1, $2::money)"
-var addPendingPurchase string = "SELECT * FROM \"add_pending_purchase\"($1,$2,$3,$4::money,$5, $6)"
-var getLatestPendingPurchase string = "SELEECT * FROM \"get_latest_pending_purchase_for_user\"($1)"
+var addPendingPurchase string = "SELECT * FROM \"add_pending_purchase\"($1,$2,$3::int,$4::money,$5, $6)"
+var getLatestPendingPurchase string = "SELECT * FROM \"get_latest_pending_purchase_for_user\"($1)"
 var commitPurchase string = "SELECT * FROM \"commit_pending_purchase\"($1,$2)"
-var cancelPurchase string = "SELECT * FROM \"cancel_pending_purchase\"($1)"
+var cancelPurchase string = "SELECT * FROM \"cancel_pending_transaction\"($1)"
 
 var Hostname string
 

@@ -20,7 +20,7 @@ import (
 func Add(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Adding Funds to account:")
     type add_struct struct {
-        Amount string
+        Amount float64
     }
     vars := mux.Vars(r)
     UserId := vars["id"]
@@ -29,6 +29,9 @@ func Add(w http.ResponseWriter, r *http.Request){
     decoder := json.NewDecoder(r.Body)
     var t add_struct   
     err := decoder.Decode(&t)
+
+    strAmount := strconv.FormatFloat(t.Amount, 'f', -1, 64)
+
     if err != nil {
 
     }
@@ -47,12 +50,12 @@ func Add(w http.ResponseWriter, r *http.Request){
         Server          : Hostname,
         CommandType     : "ADD",
         StockSymbol     : "",
-        Funds           : t.Amount,
+        Funds           : strAmount,
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 
     rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement")
+    failOnError(err, "Failed to Create Statement: getUserId for add.go")
     //found := false
     var id int = -1
     var userid string
@@ -75,15 +78,14 @@ func Add(w http.ResponseWriter, r *http.Request){
 	    Server          : Hostname,
 	    Command         : "ADD",
 	    StockSymbol     : "",
-       	    Funds           : t.Amount,
+       	    Funds           : strAmount,
 	    FileName        : "",
 	    DebugMessage    : "Created User Account",   
         }
         SendRabbitMessage(Debug,Debug.EventType)
-        db.Query(addUser, UserId, t.Amount, time.Now())
+        db.Query(addUser, UserId, strAmount, time.Now())
     }else{
-        amountFloat, err = strconv.ParseFloat(t.Amount, 64)
-        failOnError(err, "Amount is not a vaid number, Transaction" + TransId)
+        amountFloat, err = strconv.ParseFloat(strAmount, 64)
         if(amountFloat < 0){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
@@ -95,7 +97,7 @@ func Add(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "ADD",
                 StockSymbol     : "",
-                Funds           : t.Amount,
+                Funds           : strAmount,
                 FileName        : "",
                 ErrorMessage    : "Amount to add is not a valid number",   
             }
@@ -114,7 +116,7 @@ func Add(w http.ResponseWriter, r *http.Request){
                 Service         : "Account",
                 Server          : Hostname,
                 AccountAction   : "Add",
-                Funds           : t.Amount,
+                Funds           : strAmount,
             }
             SendRabbitMessage(AccountEvent,AccountEvent.EventType)
 
