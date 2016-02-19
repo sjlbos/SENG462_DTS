@@ -3,6 +3,7 @@ import argparse
 import pika
 import json
 import Queue
+import requests
 
 parser = argparse.ArgumentParser(description='Workload Generator for Distributed System')
 parser.add_argument('--filename', nargs='?')
@@ -11,13 +12,17 @@ parser.add_argument('--port', nargs='?')
 parser.add_argument('--slaves', nargs='?')
 parser.add_argument('--rhost', nargs='?')
 parser.add_argument('--rport', nargs='?')
+parser.add_argument('--nhost', nargs='?')
+parser.add_argument('--nport', nargs='?')
 
 args = parser.parse_args()
 
 rabbitHost = "localhost"
-rabbitPort = "44411"
-
+rabbitPort = "44410"
+nannyHost = "localhost"
+nannyPort = "44413"
 filename = ""
+outputFile = ""
 hostname = "localhost"
 num_Slaves = 1
 doDump = False
@@ -37,6 +42,11 @@ if args.rhost:
 	rabbitHost = args.rhost
 if args.rport:
 	rabbitPort = args.rport
+if args.nhost:
+	nannyHost = args.nhost
+if args.rport:
+	nannyPort = args.nport
+
 
 url = "http://" + hostname
 if port:
@@ -49,6 +59,7 @@ channel = connection.channel()
 channel.exchange_declare(exchange='WorkloadGenerator',type='direct', durable=True, auto_delete=True)
 for i in range(1, int(num_Slaves)+1):
 	channel.queue_declare(queue='Slave' +str(i), durable=True)
+channel.queue_declare(queue='SlaveStatus', durable=True)
 
 class ApiCommand:
 	def __init__(self, uri, request, newId, method, statuscode):
@@ -191,6 +202,7 @@ for line in fp:
 		if len(command_parts) == 2:
 			doDump = True
 		else:
+			outputFile = command_parts[2]
 			if userId not in UserList:
 				UserList[userId] = queue.Queue()
 			UserList[userId].put(line)
@@ -242,18 +254,14 @@ for userId in UserList:
 		else:
 			UserCommands.add_command(getAddCommand("","",0))
 		UserCommands.add_command(tmpCommand)
-
 	json_send = json.dumps(UserCommands.reprJSON(), cls=ComplexEncoder)
 	print(json_send)
 	slaveNo = sent_messages % int(num_Slaves) + 1
 	rKey = "Slave" + str(slaveNo)
 	rExchange = "WorkloadGenerator"
-        print("Sending to Slave " + rKey)
-	channel.confirm_delivery()
+	print("Sending to Slave " + rKey)
 	channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
 	sent_messages = sent_messages + 1
-#if doDump:
-#	messageCommand = StartCommand()
 
 raw_input("Press Enter to continue...")
 messageCommand = ControlCommand()
@@ -261,9 +269,42 @@ json_send = json.dumps(messageCommand.reprJSON(), cls=ComplexEncoder)
 print(json_send)
 channel.basic_publish(exchange='WorkloadGenerator', routing_key='Control', body=json_send)
 
-print("Complete!")
+print("Waiting for workers")
+
+workerSum=0
+for i in range(num_Slaves):
+	workerSum += (i + 1)
+
+def callback(ch, method, properties, body):
+    print(" [x] Received %r" % body)
+    jsonVal = json.loads(body)
+    print(" [x] Done")
+    status = jsonVal.Status
+    workerNum = jsonVal.WorkerNum
+    workerSum-=WorkerNum
+    ch.basic_ack(delivery_tag = method.delivery_tag)
+    if workerSum == 0:
+    	print("Complete")
+    	if doDump:
+			UserCommands = BatchCommand("BatchOrder","Dumplog")
+			tmpCommand = getDumplogCommand(TransId)
+			UserCommands.add_command(tmpCommand)
+			json_send = json.dumps(UserCommands.reprJSON(), cls=ComplexEncoder)
+			print(json_send)
+			slaveNo = sent_messages % int(num_Slaves) + 1
+			rKey = "Slave" + str(slaveNo)
+			rExchange = "WorkloadGenerator"
+			print("Sending to Slave " + rKey)
+			channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
+			sent_messages = sent_messages + 1
+			requests.get("http://" + nhost + ":" + nport).read()
+
+channel.basic_qos(prefetch_count=1)
+channel.basic_consume(callback, queue='SlaveStatus')
+
+channel.start_consuming()
 
 
-
+#{ "Status" : "Complete" , "WorkerNum" : int} 
 
 

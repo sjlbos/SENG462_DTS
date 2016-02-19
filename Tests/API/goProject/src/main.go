@@ -34,7 +34,10 @@ var updateBalance string = "SELECT * FROM \"update_user_account_balance\"($1, $2
 var addPendingPurchase string = "SELECT * FROM \"add_pending_purchase\"($1,$2,$3::int,$4::money,$5, $6)"
 var getLatestPendingPurchase string = "SELECT * FROM \"get_latest_pending_purchase_for_user\"($1)"
 var commitPurchase string = "SELECT * FROM \"commit_pending_purchase\"($1,$2)"
-var cancelPurchase string = "SELECT * FROM \"cancel_pending_transaction\"($1)"
+var addPendingSale string = "SELECT * FROM \"add_pending_sale\"($1,$2,$3::int,$4::money,$5, $6)"
+var getLatestPendingSale string = "SELECT * FROM \"get_latest_pending_sale_for_user\"($1)"
+var commitSale string = "SELECT * FROM \"commit_pending_sale\"($1,$2)"
+var cancelTransaction string = "SELECT * FROM \"cancel_pending_transaction\"($1)"
 
 var Hostname string
 

@@ -106,17 +106,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
     SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
 
 
-    rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement, getUserID for buy")
-    found := false
-    var id int
-    var userid string
-    var balanceStr string
-    
-    for rows.Next() {
-        found = true
-        err = rows.Scan(&id, &userid, &balanceStr)
-    }
+    id, found, _ := getDatabaseUserId(UserId, "BUY") 
     if(found == false){
         Error := ErrorEvent{
             EventType       : "ErrorEvent",
@@ -135,28 +125,27 @@ func Buy(w http.ResponseWriter, r *http.Request){
         SendRabbitMessage(Error,Error.EventType)
     }else{
 	
-	quotePrice, err := strconv.ParseFloat(QuoteEvent.Price, 64)
-	toBuy := math.Floor(t.Amount/ quotePrice)
+	    quotePrice, err := strconv.ParseFloat(QuoteEvent.Price, 64)
+	    toBuy := math.Floor(t.Amount/ quotePrice)
         _, err = db.Query(addPendingPurchase, id, t.Symbol, toBuy, QuoteEvent.Price, time.Now(), time.Now().Add(time.Second*60))
         if(err != nil){
-		Error := ErrorEvent{
-		    EventType       : "ErrorEvent",
-		    Guid            : Guid.String(),
-		    OccuredAt       : time.Now(),
-		    TransactionId   : TransId,
-		    UserId          : UserId,
-		    Service         : "API",
-		    Server          : Hostname,
-		    Command         : "ADD",
-		    StockSymbol     : "",
-		    Funds           : strAmount,
-		    FileName        : "",
-		    ErrorMessage    : "Not Enough Money in Account",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
-	}
+    		Error := ErrorEvent{
+    		    EventType       : "ErrorEvent",
+    		    Guid            : Guid.String(),
+    		    OccuredAt       : time.Now(),
+    		    TransactionId   : TransId,
+    		    UserId          : UserId,
+    		    Service         : "API",
+    		    Server          : Hostname,
+    		    Command         : "ADD",
+    		    StockSymbol     : "",
+    		    Funds           : strAmount,
+    		    FileName        : "",
+    		    ErrorMessage    : "Failed to create purchase",   
+    		}
+    		SendRabbitMessage(Error,Error.EventType)
+        }
     }
-    
 }
 
 func CommitBuy(w http.ResponseWriter, r *http.Request){
@@ -182,18 +171,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType); 
-//TODO database Stuff
-    rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement getUserId for commitBuy")
-    found := false
-    var id int
-    var userid string
-    var balanceStr string
-
-    for rows.Next() {
-        found = true
-        err = rows.Scan(&id, &userid, &balanceStr)
-    }
+    id, found, _ := getDatabaseUserId(UserId, "COMMIT_BUY") 
 
     if(found == false){
         Error := ErrorEvent{
@@ -244,7 +222,23 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
             _, err := db.Query(commitPurchase, id, time.Now())
-            failOnError(err, "Error with DB Query commitPurchase")
+            if(err != nil){
+                Error := ErrorEvent{
+                    EventType       : "ErrorEvent",
+                    Guid            : Guid.String(),
+                    OccuredAt       : time.Now(),
+                    TransactionId   : TransId,
+                    UserId          : UserId,
+                    Service         : "API",
+                    Server          : Hostname,
+                    Command         : "COMMIT_BUY",
+                    StockSymbol     : stock,
+                    Funds           : "",
+                    FileName        : "",
+                    ErrorMessage    : "Not Enough funds to buy Stocks",   
+                }
+                SendRabbitMessage(Error,Error.EventType)
+            }
         }   
     }
 }
@@ -272,18 +266,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-//TODO database Stuff
-   rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement")
-    found := false
-    var id int
-    var userid string
-    var balanceStr string
-
-    for rows.Next() {
-        found = true
-        err = rows.Scan(&id, &userid, &balanceStr)
-    }
+    id, found := getDatabaseUserId(UserId, "CANCEL_BUY") 
 
     if(found == false){
         Error := ErrorEvent{
@@ -326,18 +309,16 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
                 Service         : "API",
                 Server          : Hostname,
                 Command         : "CANCEL_BUY",
-                StockSymbol     : "",
+                StockSymbol     : stock,
                 Funds           : "",
                 FileName        : "",
                 ErrorMessage    : "No recent BUY commands issued",   
             }
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
-            _, err := db.Query(cancelPurchase, id)
+            _, err := db.Query(cancelTransaction, id)
             failOnError(err, "Error with DB Query: cancelPurchase for cancelBuy")
 
         }   
     }
-
-
 }

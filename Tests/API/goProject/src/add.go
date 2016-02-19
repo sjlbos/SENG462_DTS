@@ -54,39 +54,27 @@ func Add(w http.ResponseWriter, r *http.Request){
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 
-    rows, err := db.Query(getUserId, UserId)
-    failOnError(err, "Failed to Create Statement: getUserId for add.go")
-    //found := false
-    var id int = -1
-    var userid string
-    var balanceStr string
     var balanceFloat float64
-    var amountFloat float64
-
-    for rows.Next() {
-	//found = true
-	err = rows.Scan(&id, &userid, &balanceStr)
-    }
-    if(id == -1){
-	Debug := DebugEvent{
+    id, found, balanceStr := getDatabaseUserId(UserId, "ADD") 
+    if(found == false){
+    	Debug := DebugEvent{
             EventType       : "DebugEvent",
-	    Guid            : Guid.String(),
-	    OccuredAt       : time.Now(),
-	    TransactionId   : TransId,
-	    UserId          : UserId,
-	    Service         : "API",
-	    Server          : Hostname,
-	    Command         : "ADD",
-	    StockSymbol     : "",
-       	    Funds           : strAmount,
-	    FileName        : "",
-	    DebugMessage    : "Created User Account",   
+    	    Guid            : Guid.String(),
+    	    OccuredAt       : time.Now(),
+    	    TransactionId   : TransId,
+    	    UserId          : UserId,
+    	    Service         : "API",
+    	    Server          : Hostname,
+    	    Command         : "ADD",
+    	    StockSymbol     : "",
+           	Funds           : strAmount,
+    	    FileName        : "",
+    	    DebugMessage    : "Created User Account",   
         }
         SendRabbitMessage(Debug,Debug.EventType)
         db.Query(addUser, UserId, strAmount, time.Now())
     }else{
-        amountFloat, err = strconv.ParseFloat(strAmount, 64)
-        if(amountFloat < 0){
+        if(t.Amount < 0){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
                 Guid            : Guid.String(),
@@ -105,8 +93,7 @@ func Add(w http.ResponseWriter, r *http.Request){
         }else{
             balanceStr = strings.TrimLeft(balanceStr, "$")
             balanceFloat, err = strconv.ParseFloat(balanceStr, 64)
-
-            newBalance := balanceFloat + amountFloat
+            newBalance := balanceFloat + t.Amount
             AccountEvent := AccountTransactionEvent{
                 EventType       : "AccountTransactionEvent",
                 Guid            : Guid.String(),

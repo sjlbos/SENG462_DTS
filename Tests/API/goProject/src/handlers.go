@@ -227,4 +227,18 @@ func SendRabbitMessage(message interface{}, EventType string){
 
 
 
+func getDatabaseUserId(userId string, commandStr string) (int, bool, string){
+    rows, err := db.Query(getUserId, userId)
+    failOnError(err, "Failed to Create Statement: getUserId for add.go")
+    found := false
+    var id int
+    var userid string
+    var balanceStr string
 
+
+    for rows.Next() {
+       found = true
+       err = rows.Scan(&id, &userid, &balanceStr)
+    }
+    return id, found, balanceStr
+}
