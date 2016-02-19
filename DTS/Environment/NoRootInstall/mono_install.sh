@@ -31,7 +31,7 @@ fi
 
 # Variables
 SOURCE_DIR=$INSTALL_ROOT/mono-$MONO_VERSION
-INSTALL_DIR=$INSTALL_ROOT/mono
+INSTALL_DIR=$INSTALL_ROOT/_mono_
 
 echo
 echo "Downloading and installing Mono Framework..."
