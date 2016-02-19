@@ -658,16 +658,23 @@ RETURNS int AS
 $$
 DECLARE 
 	_transaction_id int;
+	_uid int;
+	_stock varchar;
+	_num_shares int;
+	_share_price money;
 BEGIN
-	_transaction_id = perform_purchase_transaction((
-		SELECT 	uid,
-				stock,
-				num_shares,
-				share_price,
-				_made_at
-		FROM pending_transactions
-		WHERE id = _id
-		));
+	SELECT  uid, stock, num_shares, share_price 
+	INTO    _uid, _stock,_num_shares,_share_price
+	FROM    pending_transactions
+	WHERE   id = _id;
+
+	_transaction_id = perform_purchase_transaction(
+		_uid,
+		_stock,
+		_num_shares,
+		_share_price,
+		_made_at
+	);
 
 	DELETE FROM pending_transactions WHERE id = _id;
 
