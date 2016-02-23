@@ -44,19 +44,35 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
     //Audit UserCommand
     Guid := getNewGuid()
     OccuredAt := time.Now()
-    CommandEvent := UserCommandEvent{
-        EventType       : "UserCommandEvent",
-        Guid            : Guid.String(),
-        OccuredAt       : OccuredAt,
-        TransactionId   : TransId,
-        UserId          : UserId,
-        Service         : "Command",
-        Server          : "B134",
-        CommandType     : "CREATE_BUY_TRIGGER",
-        StockSymbol     : Symbol,
-        Funds           : "",
+    if(t.Amount == ""){
+	    CommandEvent := UserCommandEvent{
+		EventType       : "UserCommandEvent",
+		Guid            : Guid.String(),
+		OccuredAt       : OccuredAt,
+		TransactionId   : TransId,
+		UserId          : UserId,
+		Service         : "Command",
+		Server          : "B134",
+		Command         : "SET_BUY_TRIGGER",
+		StockSymbol     : Symbol,
+		Funds           : "",
+	    }
+	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+    }else{
+	    CommandEvent := UserCommandEvent{
+		EventType       : "UserCommandEvent",
+		Guid            : Guid.String(),
+		OccuredAt       : OccuredAt,
+		TransactionId   : TransId,
+		UserId          : UserId,
+		Service         : "Command",
+		Server          : "B134",
+		Command         : "SET_BUY_AMOUNT",
+		StockSymbol     : Symbol,
+		Funds           : "",
+	    }
+	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
     }
-    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
 //TODO database stuff
 
@@ -89,19 +105,35 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
     //Audit UserCommand
     Guid := getNewGuid()
     OccuredAt := time.Now()
-    CommandEvent := UserCommandEvent{
-        EventType       : "UserCommandEvent",
-        Guid            : Guid.String(),
-        OccuredAt       : OccuredAt,
-        TransactionId   : TransId,
-        UserId          : UserId,
-        Service         : "Command",
-        Server          : "B134",
-        CommandType     : "CREATE_SELL_TRIGGER",
-        StockSymbol     : Symbol,
-        Funds           : "",
+    if(t.Amount == ""){
+	    CommandEvent := UserCommandEvent{
+		EventType       : "UserCommandEvent",
+		Guid            : Guid.String(),
+		OccuredAt       : OccuredAt,
+		TransactionId   : TransId,
+		UserId          : UserId,
+		Service         : "Command",
+		Server          : "B134",
+		Command         : "SET_SELL_TRIGGER",
+		StockSymbol     : Symbol,
+		Funds           : "",
+	    }
+	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+    }else{
+	    CommandEvent := UserCommandEvent{
+		EventType       : "UserCommandEvent",
+		Guid            : Guid.String(),
+		OccuredAt       : OccuredAt,
+		TransactionId   : TransId,
+		UserId          : UserId,
+		Service         : "Command",
+		Server          : "B134",
+		Command         : "SET_SELL_AMOUNT",
+		StockSymbol     : Symbol,
+		Funds           : "",
+	    }
+	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
     }
-    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
 //TODO database Stuff
 
@@ -129,7 +161,7 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "CANCEL_BUY_TRIGGER",
+        Command         : "CANCEL_SET_BUY",
         StockSymbol     : Symbol,
         Funds           : "",
     }
@@ -161,7 +193,7 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "CANCEL_SELL_TRIGGER",
+        Command         : "CANCEL_SET_SELL",
         StockSymbol     : Symbol,
         Funds           : "",
     }

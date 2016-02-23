@@ -52,7 +52,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : Hostname,
-        CommandType     : "SELL",
+        Command         : "SELL",
         StockSymbol     : t.Symbol,
         Funds           : strAmount,
     }
@@ -108,7 +108,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
     }
     SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
     
-    id, found := getDatabaseUserId(UserId, "SELL") 
+    id, found, _ := getDatabaseUserId(UserId, "SELL") 
     if(found == false){
         Error := ErrorEvent{
             EventType       : "ErrorEvent",
@@ -129,7 +129,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 
         quotePrice, err := strconv.ParseFloat(QuoteEvent.Price, 64)
         toSell := math.Floor(t.Amount/ quotePrice)
-        _, err = db.Query(addPendingSale, id, t.Symbol, toSell, QuoteEvent.Price, time.Now(), time.Now().Add(time.Second*60))
+        _,err = db.Exec(addPendingSale, id, t.Symbol, toSell, QuoteEvent.Price, time.Now(), time.Now().Add(time.Second*60))
         if(err != nil){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
@@ -170,13 +170,13 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : Hostname,
-        CommandType     : "COMMIT_SELL",
+        Command         : "COMMIT_SELL",
         StockSymbol     : "",
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    id, found := getDatabaseUserId(UserId, "COMMIT_BUY") 
+    id, found, _ := getDatabaseUserId(UserId, "COMMIT_BUY") 
 
     if(found == false){
         Error := ErrorEvent{
@@ -195,8 +195,9 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
         }
         SendRabbitMessage(Error,Error.EventType)        
     }else{
-        rows, err := db.Query(getLatestPendingSale, id)
-        failOnError(err, "Failed to Create Statement getLastestPendingSale for commitSell")
+        LatestPendingrows, err := db.Query(getLatestPendingSale, id)
+	defer LatestPendingrows.Close()
+        failOnError(err, "Failed to Create Statement getLatestPendingSale for commitSell")
         var id int
         var uid int 
         var stock string
@@ -205,9 +206,9 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
         var requested_at time.Time 
         var expires_at time.Time   
         found = false
-        for rows.Next() {
+        for LatestPendingrows.Next() {
             found = true
-            err = rows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
+            err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
         } 
         if(found == false){
             Error := ErrorEvent{
@@ -222,12 +223,28 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
                 StockSymbol     : "",
                 Funds           : "",
                 FileName        : "",
-                ErrorMessage    : "No recent BUY commands issued",   
+                ErrorMessage    : "No recent SELL commands issued",   
             }
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
-            _, err := db.Query(commitSale, id, time.Now())
-            failOnError(err, "Error with DB Query commitSELL")
+            _, err := db.Exec(commitSale, id, time.Now())
+	    if(err != nil){
+		Error := ErrorEvent{
+		        EventType       : "ErrorEvent",
+		        Guid            : Guid.String(),
+		        OccuredAt       : time.Now(),
+		        TransactionId   : TransId,
+		        UserId          : UserId,
+		        Service         : "API",
+		        Server          : Hostname,
+		        Command         : "COMMIT_SELL",
+		        StockSymbol     : stock,
+		        Funds           : "",
+		        FileName        : "",
+		        ErrorMessage    : "Can not Sell stocks",   
+		}
+		SendRabbitMessage(Error,Error.EventType)  
+	    }
         } 
     }
 }
@@ -251,13 +268,13 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : Hostname,
-        CommandType     : "CANCEL_SELL",
+        Command         : "CANCEL_SELL",
         StockSymbol     : "",
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    id, found := getDatabaseUserId(UserId, "CANCEL_BUY") 
+    id, found,_ := getDatabaseUserId(UserId, "CANCEL_BUY") 
 
     if(found == false){
         Error := ErrorEvent{
@@ -276,7 +293,8 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
         }
         SendRabbitMessage(Error,Error.EventType)        
     }else{
-        rows, err := db.Query(getLatestPendingSale, id)
+        LatestPendingrows, err := db.Query(getLatestPendingSale, id)
+        defer LatestPendingrows.Close()
         failOnError(err, "Failed to Create Statement: getLatestSale for cancelSell")
         var id int
         var uid int 
@@ -286,10 +304,10 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
         var requested_at time.Time 
         var expires_at time.Time   
         found = false
-        for rows.Next() {
+        for LatestPendingrows.Next() {
             found = true
-            err = rows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
-        } 
+            err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
+        }
         if(found == false){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
@@ -307,7 +325,8 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
             }
             SendRabbitMessage(Error,Error.EventType)                  
         }else{
-            _, err := db.Query(cancelTransaction, id)
+            Cancelrows, err := db.Query(cancelTransaction, id)
+            defer Cancelrows.Close()
             failOnError(err, "Error with DB Query: cancelSale for cancelBuy")
 
         }   

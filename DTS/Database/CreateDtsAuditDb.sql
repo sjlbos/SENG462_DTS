@@ -1,3 +1,15 @@
+DROP TYPE IF EXISTS event_type CASCADE;
+DROP TYPE IF EXISTS command_type CASCADE;
+DROP TYPE IF EXISTS account_action CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS user_command_events CASCADE;
+DROP TABLE IF EXISTS account_transaction_events CASCADE;
+DROP TABLE IF EXISTS system_events CASCADE;
+DROP TABLE IF EXISTS error_events CASCADE;
+DROP TABLE IF EXISTS debug_events CASCADE;
+DROP TABLE IF EXISTS quote_server_events CASCADE;
+
+
 
 CREATE TYPE event_type AS ENUM(
 	'UserCommandEvent',
@@ -43,7 +55,7 @@ CREATE TABLE events(
 	server varchar(256) NOT NULL
 );
 
-CREATE FUNCTION add_base_event(
+CREATE OR REPLACE FUNCTION add_base_event(
 	_occured_at timestamptz,
 	_type event_type,
 	_transaction_id int,
@@ -82,7 +94,7 @@ CREATE TABLE user_command_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_user_command_event(
+CREATE OR REPLACE FUNCTION log_user_command_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -132,7 +144,7 @@ CREATE TABLE quote_server_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_quote_server_event(
+CREATE OR REPLACE FUNCTION log_quote_server_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -184,7 +196,7 @@ CREATE TABLE account_transaction_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_account_transaction_event(
+CREATE OR REPLACE FUNCTION log_account_transaction_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -232,7 +244,7 @@ CREATE TABLE system_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_system_event(
+CREATE OR REPLACE FUNCTION log_system_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -287,7 +299,7 @@ CREATE TABLE error_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_error_event(
+CREATE OR REPLACE FUNCTION log_error_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -345,7 +357,7 @@ CREATE TABLE debug_events(
 	FOREIGN KEY (id) REFERENCES events (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE FUNCTION log_debug_event(
+CREATE OR REPLACE FUNCTION log_debug_event(
 	_occured_at timestamptz,
 	_transaction_id int,
 	_user_id char(10),
@@ -392,7 +404,7 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
-CREATE FUNCTION get_all_events(_start timestamptz, _end timestamptz)
+CREATE OR REPLACE FUNCTION get_all_events(_start timestamptz, _end timestamptz)
 RETURNS TABLE(	id int, 
 				logged_at timestamptz, 
 				occured_at timestamptz,
@@ -552,7 +564,7 @@ $$
 LANGUAGE SQL VOLATILE;
 
 
-CREATE FUNCTION get_all_events_by_user(_user_id char(10), _start timestamptz, _end timestamptz)
+CREATE OR REPLACE FUNCTION get_all_events_by_user(_user_id char(10), _start timestamptz, _end timestamptz)
 RETURNS TABLE(	id int, 
 				logged_at timestamptz, 
 				occured_at timestamptz,

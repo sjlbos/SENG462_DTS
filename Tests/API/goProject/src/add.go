@@ -48,7 +48,7 @@ func Add(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : Hostname,
-        CommandType     : "ADD",
+        Command         : "ADD",
         StockSymbol     : "",
         Funds           : strAmount,
     }
@@ -72,7 +72,8 @@ func Add(w http.ResponseWriter, r *http.Request){
     	    DebugMessage    : "Created User Account",   
         }
         SendRabbitMessage(Debug,Debug.EventType)
-        db.Query(addUser, UserId, strAmount, time.Now())
+        Addrows, _ := db.Query(addUser, UserId, strAmount, time.Now())
+        defer Addrows.Close()
     }else{
         if(t.Amount < 0){
             Error := ErrorEvent{
@@ -107,7 +108,8 @@ func Add(w http.ResponseWriter, r *http.Request){
             }
             SendRabbitMessage(AccountEvent,AccountEvent.EventType)
 
-            db.Query(updateBalance, id, newBalance)
+            Updaterows, _ := db.Query(updateBalance, id, newBalance)
+            defer Updaterows.Close()
         }
     }
 }

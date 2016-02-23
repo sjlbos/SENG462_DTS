@@ -43,7 +43,7 @@ type UserCommandEvent struct{
     Service         string
     Server          string
 
-    CommandType     string
+    Command         string
     StockSymbol     string
     Funds           string
 }
@@ -240,5 +240,6 @@ func getDatabaseUserId(userId string, commandStr string) (int, bool, string){
        found = true
        err = rows.Scan(&id, &userid, &balanceStr)
     }
+    rows.Close()
     return id, found, balanceStr
 }

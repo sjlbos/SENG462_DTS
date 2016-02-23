@@ -450,10 +450,10 @@ DECLARE
 BEGIN
 	_transaction_id = perform_sale_transaction((
 		SELECT 	uid,
-				stock,
-				num_shares,
-				share_price,
-				_made_at
+			stock,
+			num_shares,
+			share_price,
+			_made_at
 		FROM triggers
 		WHERE id = _id
 		));
@@ -616,12 +616,12 @@ CREATE OR REPLACE FUNCTION get_latest_pending_purchase_for_user(
 RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
 	SELECT	id,
-			uid,
-			stock,
-			num_shares,
-			share_price,
-			requested_at,
-			expires_at
+		uid,
+		stock,
+		num_shares,
+		share_price,
+		requested_at,
+		expires_at
 	FROM pending_transactions
 	WHERE uid = _uid AND type = 'purchase'
 	ORDER BY requested_at DESC
@@ -686,32 +686,23 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 
 CREATE OR REPLACE FUNCTION get_latest_pending_sale_for_user(
-	_user_id varchar
+	_uid int
 )
 RETURNS TABLE(id int, uid int, stock varchar, num_shares int, share_price money, requested_at timestamptz, expires_at timestamptz) AS
 $$
-DECLARE
-	_uid int;
-BEGIN
-	SELECT id INTO _uid
-	FROM users
-	WHERE user_id = _user_id;
-
-	RETURN QUERY
-		SELECT	id,
-				uid,
-				stock,
-				num_shares,
-				share_price,
-				requested_at,
-				expires_at
-		FROM pending_transactions
-		WHERE uid = _uid AND type = 'sale'
-		ORDER BY requested_at DESC
-		LIMIT 1;
-END;
+	SELECT	id,
+		uid,
+		stock,
+		num_shares,
+		share_price,
+		requested_at,
+		expires_at
+	FROM pending_transactions
+	WHERE uid = _uid AND type = 'sale'
+	ORDER BY requested_at DESC
+	LIMIT 1;
 $$
-LANGUAGE 'plpgsql' VOLATILE;
+LANGUAGE SQL VOLATILE;
 
 
 
@@ -743,16 +734,23 @@ RETURNS int AS
 $$
 DECLARE 
 	_transaction_id int;
+	_uid int;
+	_stock varchar;
+	_num_shares int;
+	_share_price money;
 BEGIN
-	_transaction_id = perform_sale_transaction((
-		SELECT 	uid,
-				stock,
-				num_shares,
-				share_price,
-				_made_at
-		FROM pending_transactions
-		WHERE id = _id
-		));
+	SELECT  uid, stock, num_shares, share_price 
+	INTO    _uid, _stock,_num_shares,_share_price
+	FROM    pending_transactions
+	WHERE   id = _id;
+
+	_transaction_id = perform_sale_transaction(
+		_uid,
+		_stock,
+		_num_shares,
+		_share_price,
+		_made_at
+	);
 
 	DELETE FROM pending_transactions WHERE id = _id;
 

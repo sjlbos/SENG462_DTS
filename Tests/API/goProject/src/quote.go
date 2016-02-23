@@ -33,7 +33,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "QUOTE",
+        Command         : "QUOTE",
         StockSymbol     : StockId,
         Funds           : "",
     }

@@ -36,7 +36,7 @@ func DumplogUser(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "DUMPLOG",
+        Command         : "DUMPLOG",
         StockSymbol     : "",
         Funds           : "",
     }
@@ -60,7 +60,7 @@ func Dumplog(w http.ResponseWriter, r *http.Request){
         UserId          : "",
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "DUMPLOG",
+        Command         : "DUMPLOG",
         StockSymbol     : "",
         Funds           : "",
     }
@@ -87,7 +87,7 @@ func DisplaySummary(w http.ResponseWriter, r *http.Request){
         UserId          : UserId,
         Service         : "Command",
         Server          : "B134",
-        CommandType     : "DISPLAY_SUMMARY",
+        Command         : "DISPLAY_SUMMARY",
         StockSymbol     : "",
         Funds           : "",
     }
