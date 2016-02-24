@@ -42,7 +42,7 @@ ln -s $INSTALL_DIR/sbin/rabbitmq-server $INSTALL_ROOT/rabbitmq-server
 ln -s $INSTALL_DIR/sbin/rabbitmq-plugins $INSTALL_ROOT/rabbitmq-plugins
 ln -s $INSTALL_DIR/sbin/rabbitmq-env $INSTALL_ROOT/rabbitmq-env
 
-#set permissions
+# Set permissions
 chmod 770 -R $INSTALL_ROOT
 
 # Clean up

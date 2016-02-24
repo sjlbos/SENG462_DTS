@@ -21,7 +21,7 @@ echo
 echo "Downloading and installing Go..."
 echo
 
-INSTALL_DIR= $INSTALL_ROOT/go_src
+INSTALL_DIR= $INSTALL_ROOT/_go_
 CURRENT_DIR=`pwd`
 
 mkdir -p $INSTALL_ROOT
