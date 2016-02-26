@@ -9,18 +9,24 @@ namespace WorkloadGeneratorSlave
 {
     public class WorkloadGeneratorService : WorkerHost
     {
-        private int _numberOfWorkers;
+        private int _numberOfHttpWorkers;
+        private string _slaveName;
 
         protected override void InitializeService()
         {
-            _numberOfWorkers = Int32.Parse(ConfigurationManager.AppSettings["NumberOfWorkers"]);
+            _numberOfHttpWorkers = Int32.Parse(ConfigurationManager.AppSettings["NumberOfHttpWorkers"]);
+            _slaveName = ConfigurationManager.AppSettings["SlaveName"];
         }
 
         protected override IList<IWorker> GetWorkerList()
         {
             var receiver = RabbitMessengerFactory.GetReceiver("WorkloadQueueReceiver");
-            var worker = new WorkloadQueueMonitor("QueueMonitor", receiver, _numberOfWorkers);
-            return new[] {worker};
+            //var publisher = RabbitMessengerFactory.GetPublisher("SlaveStatusPublisher");
+            var worker = new WorkloadQueueMonitor(_slaveName, receiver, null, _numberOfHttpWorkers);
+            return new List<IWorker>
+            {
+                worker
+            };
         }
     }
 }

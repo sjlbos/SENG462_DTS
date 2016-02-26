@@ -30,20 +30,19 @@ namespace TransactionMonitor
         protected override IList<IWorker> GetWorkerList()
         {
             var sharedBuffer = new BlockingCollection<TransactionEvent>();
-            int totalWorkerCount = _dbWriterCount + _queueReaderCount;
-            var workerList = new List<IWorker>(totalWorkerCount);
+            var workerList = new List<IWorker>();
             var repository = new PostgresAuditRepository(_dbConnectionString);
 
             for (int i = 0; i < _queueReaderCount; i++)
             {
                 var receiver = RabbitMessengerFactory.GetReceiver("TransactionEventQueueReceiver");
-                workerList.Add(new TransactionQueueMonitorWorker(
-                    i.ToString(CultureInfo.InvariantCulture), receiver, sharedBuffer));
+                workerList.Add(new TransactionQueueMonitorWorker(String.Format(CultureInfo.InvariantCulture,
+                    "Queue Monitor {0}", i), receiver, sharedBuffer));
             }
-            for (int i = _queueReaderCount; i < totalWorkerCount; i++)
+            for (int i = 0; i < _dbWriterCount; i++)
             {
-                workerList.Add(new EventWriterWorker(
-                    i.ToString(CultureInfo.InvariantCulture), repository, sharedBuffer));
+                workerList.Add(new EventWriterWorker(String.Format(CultureInfo.InvariantCulture,
+                    "Event Writer {0}", i), repository, sharedBuffer));
             }
 
             workerList.Add(new NancyHostLauncherWorker("Nancy Launcher", _apiEndpoint, repository));

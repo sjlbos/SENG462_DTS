@@ -98,5 +98,20 @@ namespace TransactionMonitor
                     InstanceId, transactionEvent.Id), ex);
             }
         }
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+
+        }
+
+        #endregion
     }
 }

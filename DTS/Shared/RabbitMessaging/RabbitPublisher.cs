@@ -85,13 +85,10 @@ namespace RabbitMessaging
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (Channel != null)
             {
-                if (Channel != null)
-                {
-                    Channel.Close();
-                    Channel = null;
-                }
+                Channel.Close();
+                Channel.Dispose();
             }
         }
 

@@ -95,10 +95,9 @@ namespace RabbitMessaging
 
         public void CancelMessageWait()
         {
-            if (Channel != null)
+            if (Channel != null && Channel.IsOpen)
             {
                 Channel.BasicCancel(_consumerTag);
-                Channel.Close();
             }
         }
 
@@ -112,10 +111,10 @@ namespace RabbitMessaging
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (Channel != null)
             {
-                CancelMessageWait();
-                Channel = null;
+                Channel.Close();
+                Channel.Dispose();   
             }
         }
 

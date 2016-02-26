@@ -55,6 +55,7 @@
     <Compile Include="ControlMessage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StatusMessage.cs" />
     <Compile Include="UnrecognizedMessageTypeException.cs" />
     <Compile Include="WorkloadBatchMessage.cs" />
     <Compile Include="WorkloadGeneratorMessage.cs" />

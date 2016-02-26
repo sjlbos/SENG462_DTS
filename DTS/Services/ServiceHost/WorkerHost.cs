@@ -13,8 +13,9 @@ namespace ServiceHost
     {
         protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        private IList<Task> _workerTasks; 
-        private IList<IWorker> _workers;   
+        private IList<Task> _workerTasks;
+        private IList<IWorker> _workers;
+        private Task _monitorTask;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public bool RestartCrashedWorkers { get; set; }
@@ -44,6 +45,7 @@ namespace ServiceHost
         {
             Log.Info("Stopping service...");
             _cancellationTokenSource.Cancel();
+            Task.WaitAll(_monitorTask);
         }
 
         private void InitializeAndStartService()
@@ -55,7 +57,7 @@ namespace ServiceHost
                 throw new ServiceException("Worker list returned by service was null.");
             }
             StartWorkers();
-            Task.Run(() => MonitorWorkers());
+            _monitorTask = Task.Run(() => MonitorWorkers());
         }
 
         private void StartWorkers()
@@ -104,6 +106,7 @@ namespace ServiceHost
                 } 
                 _workerTasks.RemoveAt(completedTaskIndex);
                 _workers.RemoveAt(completedTaskIndex);
+                completedWorker.Dispose();
             }
             Log.Info("All workers have shut down.");
 

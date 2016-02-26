@@ -7,7 +7,7 @@ using RabbitMessaging;
 
 namespace ServiceHost
 {
-    public abstract class QueueMonitorWorker : IWorker
+    public abstract class QueueMonitorWorker : IWorker, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(QueueMonitorWorker));
 
@@ -45,7 +45,6 @@ namespace ServiceHost
                     currentMessage = Receiver.GetNextMessage();
                     if (cancellationToken.IsCancellationRequested)
                         break;
-
                     ProcessMessage(currentMessage);
                     Receiver.AckLastMessage();
                 }
@@ -62,5 +61,35 @@ namespace ServiceHost
         }
 
         public abstract void ProcessMessage(string message);
+
+        #region IDisposable
+
+        private bool _disposed = false;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                InstanceId = null;
+            }
+
+            if (Receiver != null)
+            {
+                Receiver.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        #endregion
     }
 }
