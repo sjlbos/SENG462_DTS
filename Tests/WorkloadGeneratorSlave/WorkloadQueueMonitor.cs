@@ -25,7 +25,8 @@ namespace WorkloadGeneratorSlave
         public WorkloadQueueMonitor(string instanceId, IMessageReceiver messageReceiver, IMessagePublisher statusPublisher, int httpWorkerCount) 
             : base(instanceId, messageReceiver)
         {
-            
+            if(statusPublisher == null)
+                throw new ArgumentNullException("statusPublisher");
 
             _batchQueue = new ConcurrentQueue<WorkloadBatchMessage>();
             _httpWorkerCount = httpWorkerCount;
