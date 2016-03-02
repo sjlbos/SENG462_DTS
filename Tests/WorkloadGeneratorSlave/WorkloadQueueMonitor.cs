@@ -16,14 +16,21 @@ namespace WorkloadGeneratorSlave
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof (WorkloadQueueMonitor));
 
-        private readonly int _httpWorkerCount ;
+        private const string StatusRoutingKey = "SlaveStatus";
+
+        private readonly int _httpWorkerCount;
+        private readonly IMessagePublisher _statusPublisher;
         private readonly ConcurrentQueue<WorkloadBatchMessage> _batchQueue; 
 
-        public WorkloadQueueMonitor(string instanceId, IMessageReceiver messageReceiver, int httpWorkerCount) 
+        public WorkloadQueueMonitor(string instanceId, IMessageReceiver messageReceiver, IMessagePublisher statusPublisher, int httpWorkerCount) 
             : base(instanceId, messageReceiver)
         {
+            if(statusPublisher == null)
+                throw new ArgumentNullException("statusPublisher");
+
             _batchQueue = new ConcurrentQueue<WorkloadBatchMessage>();
             _httpWorkerCount = httpWorkerCount;
+            _statusPublisher = statusPublisher;
         }
 
         public override void ProcessMessage(string message)
@@ -87,6 +94,8 @@ namespace WorkloadGeneratorSlave
             Task.WaitAll(taskList.ToArray());
 
             Log.Info("All command batch threads have finished executing.");
+
+            SendStatusNotification("Complete");
         }
 
         private void ProcessWorkloadOrders()
@@ -94,12 +103,13 @@ namespace WorkloadGeneratorSlave
             WorkloadBatchMessage batch = null;
             while (_batchQueue.TryDequeue(out batch))
             {
-                Log.DebugFormat(CultureInfo.InvariantCulture,
-                    "Worker batch with");
+                Log.InfoFormat(CultureInfo.InvariantCulture,
+                    "Starting execution of worker batch id \"{0}\"...", batch.Id);
                 foreach (var command in batch.Commands)
                 {
                     ExecuteApiCommand(command);
                 }
+                Log.InfoFormat(CultureInfo.InvariantCulture, "Exectuion of batch \"{0}\" complete.");
             }   
         }
 
@@ -133,5 +143,38 @@ namespace WorkloadGeneratorSlave
                 Log.Error("Encountered an error while executing api command with Id=" + command.Id, ex);
             }
         }
+
+        private void SendStatusNotification(string statusMessage)
+        {
+            var message = new StatusMessage
+            {
+                SlaveName = InstanceId,
+                Status = statusMessage,
+                Timestamp = DateTime.Now
+            };
+            string serializedMessage = JsonConvert.SerializeObject(message);
+
+            try
+            {
+                _statusPublisher.PublishMessage(serializedMessage, StatusRoutingKey);
+            }
+            catch (ConnectionException ex)
+            {
+                Log.Error("Encountered an error while attempting to publish status message." , ex);
+            }
+        }
+
+        #region IDisposable
+
+        protected override void Dispose(bool disposing)
+        {
+            if (_statusPublisher != null)
+            {
+                _statusPublisher.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #endregion
     }
 }

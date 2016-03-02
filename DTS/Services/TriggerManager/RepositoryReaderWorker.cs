@@ -149,5 +149,20 @@ namespace TriggerManager
                 _lastUpdated[userId] = dateTime;
             }
         }
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+
+        }
+
+        #endregion
     }
 }

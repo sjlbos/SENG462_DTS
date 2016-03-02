@@ -53,7 +53,7 @@ namespace TransactionEvents
             }
             if (Funds != null)
             {
-                w.WriteElementString("funds", Funds.Value.ToString("N2"));
+                w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
             w.WriteEndElement();
         }
@@ -90,7 +90,7 @@ namespace TransactionEvents
             w.WriteStartElement("accountTransaction");
             WriteCommonPropertyXml(w);
             w.WriteElementString("action", AccountAction.ToString());
-            w.WriteElementString("funds", Funds.ToString("N2"));
+            w.WriteElementString("funds", Funds.ToString("F2"));
             w.WriteEndElement();
         }
     }
@@ -113,7 +113,7 @@ namespace TransactionEvents
             }
             if (Funds.HasValue)
             {
-                w.WriteElementString("funds", Funds.Value.ToString("N2")); 
+                w.WriteElementString("funds", Funds.Value.ToString("F2")); 
             }
             if (FileName != null)
             {
@@ -143,7 +143,7 @@ namespace TransactionEvents
             }
             if (Funds.HasValue)
             {
-                w.WriteElementString("funds", Funds.Value.ToString("N2"));
+                w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
             if (FileName != null)
             {
@@ -177,7 +177,7 @@ namespace TransactionEvents
             }
             if (Funds.HasValue)
             {
-                w.WriteElementString("funds", Funds.Value.ToString("N2"));
+                w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
             if (FileName != null)
             {
@@ -185,7 +185,7 @@ namespace TransactionEvents
             }
             if (DebugMessage != null)
             {
-                w.WriteElementString("errorMessage", DebugMessage);
+                w.WriteElementString("debugMessage", DebugMessage);
             }
             w.WriteEndElement();
         }

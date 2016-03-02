@@ -57,5 +57,20 @@ namespace TransactionMonitor.Api
             Log.InfoFormat(CultureInfo.InvariantCulture, "Starting Nancy host at \"{0}\".", _baseUri);
             host.Start();
         }
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+
+        }
+
+        #endregion
     }
 }
