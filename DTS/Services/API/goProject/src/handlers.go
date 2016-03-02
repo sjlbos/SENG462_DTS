@@ -10,7 +10,8 @@ import (
     "strings"
     "strconv"
     "time"
-    "github.com/shopspring/decimal"
+    "bytes"
+//    "github.com/shopspring/decimal"
 //    "io/ioutil"
 
 //    "github.com/gorilla/mux"
@@ -155,8 +156,8 @@ type DebugEvent struct{
     DebugMessage    : "",   
 }*/
 
-func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) decimal.Decimal {
-    strEcho :=  TransId + "," + getNew + "," + StockId + "," + UserId + "," + guid + "\n"
+func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
+    strEcho :=  TransId + "," + getNew + "," + UserId + "," + StockId + "," + guid + "\n"
 
     tcpAddr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
     if err != nil {
@@ -178,12 +179,11 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
     
     reply := make([]byte, 1024)
     _, err = qconn.Read(reply)
+    reply = bytes.Trim(reply, "\x00")
     qconn.Close()
-    result, err := decimal.NewFromString(string(reply))
-    if err != nil{
-        //error
-    }
-    return result
+    println(string(reply))
+
+    return string(reply)
 }
 
 func stripCtlAndExtFromUTF8(str string) string {
@@ -240,6 +240,8 @@ func SendRabbitMessage(message interface{}, EventType string){
         q = message.(ErrorEvent)
     }else if(EventType == "DebugEvent"){
         q = message.(DebugEvent)
+    }else if(EventType == "SystemEvent"){
+        q = message.(SystemEvent)
     }else{
        panic("NOT YET IMPLEMENTED")
     }

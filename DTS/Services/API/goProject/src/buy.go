@@ -61,7 +61,15 @@ func Buy(w http.ResponseWriter, r *http.Request){
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
  
     //Get A Quote
-    quotePrice := getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
+    var strPrice string
+    strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
+
+    var quotePrice decimal.Decimal
+    quotePrice, err = decimal.NewFromString(strPrice)
+    if err != nil || quotePrice == decimal.NewFromFloat(0){
+        //error
+        return;
+    }
 
     id, found, _ := getDatabaseUserId(UserId, "BUY") 
     if(found == false){
@@ -77,12 +85,12 @@ func Buy(w http.ResponseWriter, r *http.Request){
             StockSymbol     : "",
             Funds           : t.strAmount,
             FileName        : "",
-            ErrorMessage    : "User Account Does Not Exist",   
+            ErrorMessage    : "Error occured",   
         }
         SendRabbitMessage(Error,Error.EventType)
     }else{
-	    toBuy := (Amount.Div(quotePrice)).Floor()
-        _, err = db.Exec(addPendingPurchase, id, t.Symbol, toBuy.String(), quotePrice.String(), time.Now(), time.Now().Add(time.Second*60))
+	toBuy := (Amount.Div(quotePrice)).Floor()
+        _, err = db.Exec(addPendingPurchase, id, t.Symbol, toBuy.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
         if(err != nil){
     		Error := ErrorEvent{
     		    EventType       : "ErrorEvent",

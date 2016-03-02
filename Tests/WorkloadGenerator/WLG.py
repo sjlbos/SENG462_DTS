@@ -27,6 +27,8 @@ num_Slaves = 1
 doDump = False
 port = ""
 
+workerSum=0
+
 if args.filename:
 	filename = args.filename
 else:
@@ -59,7 +61,9 @@ channel.exchange_declare(exchange='WorkloadGenerator',type='direct', durable=Tru
 for i in range(1, int(num_Slaves)+1):
 	channel.queue_declare(queue='Slave' +str(i), durable=True)
 channel.queue_declare(queue='SlaveStatus', durable=True)
-
+channel.queue_bind(exchange='WorkloadGenerator',
+                   queue='SlaveStatus',
+                   routing_key='SlaveStatus')
 class ApiCommand:
 	def __init__(self, uri, request, newId, method, statuscode):
 		self.Uri = uri
@@ -271,11 +275,13 @@ channel.basic_publish(exchange='WorkloadGenerator', routing_key='Control', body=
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body)
     global workerSum
+    global sent_messages
+    global num_Slaves
     jsonVal = json.loads(body)
     print(" [x] Done")
-    status = jsonVal.Status
-    workerNum = jsonVal.WorkerNum
-    workerSum -= WorkerNum
+    print jsonVal
+    workerNum = jsonVal['SlaveName']
+    workerSum -= int(workerNum)
     ch.basic_ack(delivery_tag = method.delivery_tag)
     if workerSum == 0:
     	print("Complete")
@@ -293,10 +299,9 @@ def callback(ch, method, properties, body):
 		print("Getting XML File")
 
 print("Waiting for workers")
-workerSum=0
 for i in range(int(num_Slaves)):
 	workerSum += (i + 1)
-
+print("current workerSum: " + str(workerSum))
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(callback, queue='SlaveStatus')
 

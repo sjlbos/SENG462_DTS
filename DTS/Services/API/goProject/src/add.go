@@ -57,7 +57,7 @@ func Add(w http.ResponseWriter, r *http.Request){
     var balanceFloat float64
     id, found, balanceStr := getDatabaseUserId(UserId, "ADD") 
     if(found == false){
-    	Debug := DebugEvent{
+    	/*Debug := DebugEvent{
             EventType       : "DebugEvent",
     	    Guid            : Guid.String(),
     	    OccuredAt       : time.Now(),
@@ -70,8 +70,8 @@ func Add(w http.ResponseWriter, r *http.Request){
            	Funds           : strAmount,
     	    FileName        : "",
     	    DebugMessage    : "Created User Account",   
-        }
-        SendRabbitMessage(Debug,Debug.EventType)
+        }*/
+        //SendRabbitMessage(Debug,Debug.EventType)
         Addrows, _ := db.Query(addUser, UserId, strAmount, time.Now())
         defer Addrows.Close()
     }else{

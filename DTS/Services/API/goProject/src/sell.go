@@ -64,8 +64,16 @@ func Sell(w http.ResponseWriter, r *http.Request){
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
     //Get A Quote
-    quotePrice := getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
-    
+    var strPrice string
+    strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
+
+    var quotePrice decimal.Decimal
+    quotePrice, err = decimal.NewFromString(strPrice)
+    if err != nil || quotePrice == decimal.NewFromFloat(0){
+        //error
+        return;
+    }
+
     id, found, _ := getDatabaseUserId(UserId, "SELL") 
     if(found == false){
         Error := ErrorEvent{
@@ -85,7 +93,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
         SendRabbitMessage(Error,Error.EventType)
     }else{
         toSell := (Amount.Div(quotePrice)).Floor()
-        _,err = db.Exec(addPendingSale, id, t.Symbol, toSell.String(), quotePrice.String(), time.Now(), time.Now().Add(time.Second*60))
+        _,err = db.Exec(addPendingSale, id, t.Symbol, toSell.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
         if(err != nil){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",

@@ -13,7 +13,7 @@ import (
 //    "io/ioutil"
 
     "github.com/gorilla/mux"
-    _"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 //    "github.com/streadway/amqp"
 //    "github.com/nu7hatch/gouuid"
 )
@@ -40,10 +40,17 @@ func Quote(w http.ResponseWriter, r *http.Request){
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    price := getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+    var strPrice string
+    strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+    
 
+    var price decimal.Decimal
+    price, err := decimal.NewFromString(strPrice)
+    if err != nil{
+        //error
+    }
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, StockId)
-    fmt.Fprintln(w, price.String())
+    fmt.Fprintln(w, price)
 
 }

@@ -64,9 +64,25 @@ type DebugEvent struct{
     DebugMessage    string
 }
 
+type SystemEvent struct{
+    EventType       string
+
+    Guid            string
+    OccuredAt       time.Time
+    TransactionId   string
+    UserId          string
+    Service         string
+    Server          string
+
+    Command         string
+    StockSymbol     string
+    Funds           string
+    FileName        string
+}
+
 type QuoteCacheItem struct{
 	Expiration      time.Time
-	Value		    decimal.Decimal
+	Value		string
 }
 
 var memCache map[string]QuoteCacheItem
@@ -103,6 +119,8 @@ func SendRabbitMessage(message interface{}, EventType string){
         q = message.(ErrorEvent)
     }else if(EventType == "DebugEvent"){
         q = message.(DebugEvent)
+    }else if(EventType == "SystemEvent"){
+        q = message.(SystemEvent)
     }else{
        panic("NOT YET IMPLEMENTED")
     }
@@ -131,7 +149,6 @@ func msToTime(ms string) (time.Time, error) {
 }
 
 func handleConnection(conn net.Conn){
-
 	status, err := bufio.NewReader(conn).ReadString('\n')
 	inputs := strings.Split(status, ",")
 
@@ -139,6 +156,8 @@ func handleConnection(conn net.Conn){
 		//invalid input
 	}
 	var price decimal.Decimal
+	var found bool
+	var QuoteItem QuoteCacheItem
 
 	TransId 		:= inputs[0]
 	getNew, err 	:= strconv.ParseBool(inputs[1])
@@ -146,102 +165,131 @@ func handleConnection(conn net.Conn){
 	stockSymbol 	:= inputs[3]
 	Guid			:= inputs[4]
 
-	found := false
+	found = false
 	num_threads := 4
 
 	if !getNew {
-		QuoteItem, found := memCache[stockSymbol]
+		QuoteItem, found = memCache[stockSymbol]
 		if found{
-			if QuoteItem.Expiration.After(time.Now()){
+			if QuoteItem.Expiration.Before(time.Now()){
 				found = false
 			}
 		}
 	}
 
+	sendString := stockSymbol + "," + APIUserId + "\n"
 	if !found {
 		messages := make(chan string)
 		for num_threads > 0 {
-			go func() { 
-				conn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:4441")
+			go func() {
+				conn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:4444")
 				if err != nil {
 					// handle error
 				}
-				fmt.Fprintf(conn, status)
-				response, err := bufio.NewReader(conn).ReadString('\n')				
+				fmt.Fprintf(conn, sendString)
+				response := make([]byte, 1024)
+    				_, err = conn.Read(response)	
 
 
-				messages <- response
+				messages <- string(response)
 			}()
 			num_threads -= 1
 		}
-
 		QuoteReturn := <-messages
+		go func(){
+			ParsedQuoteReturn := strings.Split(QuoteReturn,",")
+			price, err = decimal.NewFromString(ParsedQuoteReturn[0])
+			if err != nil{
+				//error
+			
+			}
+			stockSymbol = ParsedQuoteReturn[1]
+			ReturnUserId := ParsedQuoteReturn[2]
+			msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
+			if err != nil{
+				//error
+			
+			}
+			cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
 
-		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
-		price, err := decimal.NewFromString(ParsedQuoteReturn[0])
-		if err != nil{
-			//error
+			if ReturnUserId != APIUserId {
+				// system error
+
+			}
+
+			QuoteEvent := QuoteServerEvent{
+			EventType       : "QuoteServerEvent",
+			Guid            : Guid,
+			OccuredAt       : time.Now(),
+			TransactionId   : TransId,
+			UserId          : APIUserId,
+			Service         : "QUOTE",
+			Server          : "QuoteCache",
+			Price           : price.String(),
+			StockSymbol     : stockSymbol,
+			QuoteServerTime : msTimeStamp,
+			Cryptokey       : cryptoKey,
+			}
+			SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
+			tmpQuoteItem := QuoteCacheItem{
+		    	    Expiration 		    : time.Now().Add(time.Duration(time.Second*60)),
+		       	    Value		    : price.String(),
+			}
+			// update map
+			memMutex.Lock()
+			memCache[stockSymbol] = tmpQuoteItem
+			QuoteItem = tmpQuoteItem
+			memMutex.Unlock()
+			messages <- "Done"
+			_, err = conn.Write([]byte(QuoteItem.Value))
+			if err != nil {
+			    // system error
+			}
+		}()
+		i := 1
+                for(i <= 4){
+			<- messages
+			i++
 		}
-		stockSymbol = ParsedQuoteReturn[1]
-		ReturnUserId := ParsedQuoteReturn[2]
-		msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
-		cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
-
-		if ReturnUserId != APIUserId {
-			// system error
-
-		}
-
-		QuoteEvent := QuoteServerEvent{
-	        EventType       : "QuoteServerEvent",
-	        Guid            : Guid,
-	        OccuredAt       : time.Now(),
-	        TransactionId   : TransId,
-	        UserId          : APIUserId,
-	        Service         : "QUOTE",
-	        Server          : "QuoteCache",
-	        Price           : price.String(),
-	        StockSymbol     : stockSymbol,
-	        QuoteServerTime : msTimeStamp,
-	        Cryptokey       : cryptoKey,
-	    }
-	    SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
-	    tmpQuoteItem := QuoteCacheItem{
-	    	Expiration 		: time.Now().Add(time.Second*60),
-	    	Value			: price,
-	    }
-	    // update map
-	    memMutex.Lock()
-	    memCache[stockSymbol] = tmpQuoteItem
-	    memMutex.Unlock()
-
+		close(messages)
 	}else{
 		//log system event returned Quote
-
-
-
-	}
-	_, err = conn.Write([]byte(price.String()))
-	if err != nil {
-		// system error
+		SystemEvent := SystemEvent{
+			EventType       : "SystemEvent",
+			Guid            : Guid,
+			OccuredAt       : time.Now(),
+			TransactionId   : TransId,
+			UserId          : APIUserId,
+			Service         : "QUOTE",
+			Server          : "QuoteCache",
+			Command         : price.String(),
+			StockSymbol     : stockSymbol,
+			Funds           : "",
+			FileName        : "",
+	        }
+		SendRabbitMessage(SystemEvent,SystemEvent.EventType)
+		_, err = conn.Write([]byte(QuoteItem.Value))
+		if err != nil {
+		    // system error
+		}
 	}
 }
 
 
 func main(){
-	memCache = make(map[string]QuoteCacheItem)
-	//memMutex = new(sync.Mutex)
-
+    memCache = map[string]QuoteCacheItem{}
+    
     var rhost string
-    flag.StringVar(&rhost,"rhost","localhost","name of host for RabbitMQ")
+    flag.StringVar(&rhost,"rhost","b134.seng.uvic.ca","name of host for RabbitMQ")
 
     var rport string
-    flag.StringVar(&rport,"rport","5672", "port number for RabbitMQ")
+    flag.StringVar(&rport,"rport","44410", "port number for RabbitMQ")
 
     var port string
     flag.StringVar(&port,"port", "44410", "port number for Cache")
 
     rabbitConnectionString = "amqp://dts_user:Group1@" + rhost + ":" + rport + "/"
+    println(rabbitConnectionString)
     rconn, err = amqp.Dial(rabbitConnectionString)
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()
