@@ -109,7 +109,7 @@ namespace WorkloadGeneratorSlave
                 {
                     ExecuteApiCommand(command);
                 }
-                Log.InfoFormat(CultureInfo.InvariantCulture, "Exectuion of batch \"{0}\" complete.");
+                Log.InfoFormat(CultureInfo.InvariantCulture, "Exectuion of batch \"{0}\" complete.", batch.Id);
             }   
         }
 
