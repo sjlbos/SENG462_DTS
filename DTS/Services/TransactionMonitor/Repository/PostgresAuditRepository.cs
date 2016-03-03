@@ -276,10 +276,6 @@ namespace TransactionMonitor.Repository
         {
             if(userId == null)
                 throw new ArgumentNullException("userId");
-            if (start == null)
-                throw new ArgumentNullException("start");
-            if (end == null)
-                throw new ArgumentNullException("end");
 
             using (var command = new NpgsqlCommand("get_all_events_by_user"))
             {

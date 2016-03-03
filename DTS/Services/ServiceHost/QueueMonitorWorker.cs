@@ -7,7 +7,7 @@ using RabbitMessaging;
 
 namespace ServiceHost
 {
-    public abstract class QueueMonitorWorker : IWorker, IDisposable
+    public abstract class QueueMonitorWorker : IWorker
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(QueueMonitorWorker));
 
@@ -27,8 +27,6 @@ namespace ServiceHost
 
         public void Run(CancellationToken cancellationToken)
         {
-            if (cancellationToken == null)
-                throw new ArgumentNullException("cancellationToken");
             if (cancellationToken.IsCancellationRequested)
                 return;
 
