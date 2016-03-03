@@ -28,7 +28,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\..\bin\TransactionMonitor\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -85,17 +85,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\RabbitMessaging\RabbitMessaging.csproj">
+    <ProjectReference Include="..\RabbitMessaging\RabbitMessaging.csproj">
       <Project>{09d79c66-7e99-49ed-9a34-e3f71a2e604f}</Project>
       <Name>RabbitMessaging</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Shared\TransactionEvents\TransactionEvents.csproj">
-      <Project>{1df98003-2369-4080-aba9-7e8f71a07a17}</Project>
-      <Name>TransactionEvents</Name>
     </ProjectReference>
     <ProjectReference Include="..\ServiceHost\ServiceHost.csproj">
       <Project>{f5275202-9cba-43aa-92da-369071b1ce00}</Project>
       <Name>ServiceHost</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TransactionEvents\TransactionEvents.csproj">
+      <Project>{1df98003-2369-4080-aba9-7e8f71a07a17}</Project>
+      <Name>TransactionEvents</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

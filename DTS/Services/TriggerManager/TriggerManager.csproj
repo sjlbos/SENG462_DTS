@@ -28,7 +28,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\..\bin\TriggerManager\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -81,7 +81,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\RabbitMessaging\RabbitMessaging.csproj">
+    <ProjectReference Include="..\RabbitMessaging\RabbitMessaging.csproj">
       <Project>{09d79c66-7e99-49ed-9a34-e3f71a2e604f}</Project>
       <Name>RabbitMessaging</Name>
     </ProjectReference>

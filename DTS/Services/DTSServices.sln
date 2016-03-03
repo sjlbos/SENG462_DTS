@@ -9,12 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkloadGeneratorSlave", ".
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionMonitor", "TransactionMonitor\TransactionMonitor.csproj", "{5BD1E577-E178-4D92-8747-487039424AA0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionEvents", "..\Shared\TransactionEvents\TransactionEvents.csproj", "{1DF98003-2369-4080-ABA9-7E8F71A07A17}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessaging", "..\Shared\RabbitMessaging\RabbitMessaging.csproj", "{09D79C66-7E99-49ED-9A34-E3F71A2E604F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TriggerManager", "TriggerManager\TriggerManager.csproj", "{0250D70D-E3EC-4631-96AE-28C8C375E2EE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{CA2973E1-9301-4092-B84A-698F33E03E81}"
@@ -23,6 +17,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{CA2973
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{970417F8-AF6F-4552-8DBC-4DC52816CEED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessaging", "RabbitMessaging\RabbitMessaging.csproj", "{09D79C66-7E99-49ED-9A34-E3F71A2E604F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionEvents", "TransactionEvents\TransactionEvents.csproj", "{1DF98003-2369-4080-ABA9-7E8F71A07A17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,24 +42,25 @@ Global
 		{5BD1E577-E178-4D92-8747-487039424AA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BD1E577-E178-4D92-8747-487039424AA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BD1E577-E178-4D92-8747-487039424AA0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.Build.0 = Release|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0250D70D-E3EC-4631-96AE-28C8C375E2EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0250D70D-E3EC-4631-96AE-28C8C375E2EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0250D70D-E3EC-4631-96AE-28C8C375E2EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0250D70D-E3EC-4631-96AE-28C8C375E2EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{1DF98003-2369-4080-ABA9-7E8F71A07A17} = {6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}
-		{09D79C66-7E99-49ED-9A34-E3F71A2E604F} = {6B5EE1A4-5E4A-4C24-A886-2B29E7C54BB6}
+		{F5275202-9CBA-43AA-92DA-369071B1CE00} = {970417F8-AF6F-4552-8DBC-4DC52816CEED}
+		{09D79C66-7E99-49ED-9A34-E3F71A2E604F} = {970417F8-AF6F-4552-8DBC-4DC52816CEED}
+		{1DF98003-2369-4080-ABA9-7E8F71A07A17} = {970417F8-AF6F-4552-8DBC-4DC52816CEED}
 	EndGlobalSection
 EndGlobal
