@@ -50,7 +50,7 @@ make
 make install
 
 # Symlink executables to install root
-ln -s $INSTALL_DIR/bin/* $INSTALL_ROOT/
+ln -s $INSTALL_DIR/sbin/* $INSTALL_ROOT/
 
 # Clean up
 cd $CURRENT_DIR
