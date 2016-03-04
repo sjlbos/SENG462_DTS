@@ -10,6 +10,7 @@ fi
 cd $REPO_ROOT
 
 # Build DTS Services
+DTS/Build/NuGet/NuGet.exe restore DTS/Services/DTSServices.sln
 xbuild /p:Configuration=Release DTS/Services/DTSServices.sln
 
 # Set temporary GOPATH
@@ -30,12 +31,3 @@ go get
 go install
 mv $REPO_ROOT/DTS/QuoteCache/bin/quotecache $REPO_ROOT/bin/QuoteCache
 rm -rf $REPO_ROOT/DTS/QuoteCache/bin
-
-
-
-
-
-
-
-
-
