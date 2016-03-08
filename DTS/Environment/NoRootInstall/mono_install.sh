@@ -56,6 +56,7 @@ make install
 
 # Symlink to install directory
 ln -s $INSTALL_DIR/bin/mono $INSTALL_ROOT/mono
+ln -s $INSTALL_DIR/bin/xbuild $INSTALL_ROOT/xbuild
 
 # Clean up
 cd $CURRENT_DIR
