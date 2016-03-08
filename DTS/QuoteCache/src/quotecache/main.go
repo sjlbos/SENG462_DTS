@@ -2,7 +2,7 @@ package main
 
 import(
 	"net"
-	"bufio"
+	"bytes"
 	"time"
 	"sync"
 	"github.com/shopspring/decimal"
@@ -87,12 +87,16 @@ type QuoteCacheItem struct{
 
 var memCache map[string]QuoteCacheItem
 var memMutex sync.Mutex
+var readMutex sync.Mutex
+
+var maxconns int
 
 var rabbitConnectionString string
 var rconn *amqp.Connection
 var ch *amqp.Channel
 
 var err error
+
 
 func stripCtlAndExtFromUTF8(str string) string {
 	return strings.Map(func(r rune) rune {
@@ -149,8 +153,14 @@ func msToTime(ms string) (time.Time, error) {
 }
 
 func handleConnection(conn net.Conn){
-	status, err := bufio.NewReader(conn).ReadString('\n')
-	inputs := strings.Split(status, ",")
+	status := make([]byte, 100)
+
+	readMutex.Lock()
+    	_, err = conn.Read(status)
+	readMutex.Unlock()
+	status = bytes.Trim(status, "\x00")
+
+	inputs := strings.Split(string(status), ",")
 
 	if len(inputs) != 4 {
 		//invalid input
@@ -166,10 +176,12 @@ func handleConnection(conn net.Conn){
 	Guid			:= inputs[4]
 
 	found = false
-	num_threads := 4
+	num_threads := 2
 
 	if !getNew {
+		memMutex.Lock()
 		QuoteItem, found = memCache[stockSymbol]
+		memMutex.Unlock()
 		if found{
 			if QuoteItem.Expiration.Before(time.Now()){
 				found = false
@@ -177,47 +189,49 @@ func handleConnection(conn net.Conn){
 		}
 	}
 
-	sendString := stockSymbol + "," + APIUserId + "\n"
+	
 	if !found {
-		messages := make(chan string)
+                messages := make(chan string)
 		for num_threads > 0 {
 			go func() {
-				conn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:4444")
+				sendString := stockSymbol + "," + APIUserId + "\n"
+				qconn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:4441")
 				if err != nil {
-					// handle error
+					//
 				}
-				fmt.Fprintf(conn, sendString)
-				response := make([]byte, 1024)
-    				_, err = conn.Read(response)	
-
-
+				_, err =fmt.Fprintf(qconn, sendString)
+				if err!= nil {
+					failOnError(err, "Error with fprintf")
+				}
+				response := make([]byte, 100)
+    				_, err = qconn.Read(response)	
 				messages <- string(response)
+				qconn.Close()
 			}()
 			num_threads -= 1
 		}
 		QuoteReturn := <-messages
-		go func(){
-			ParsedQuoteReturn := strings.Split(QuoteReturn,",")
-			price, err = decimal.NewFromString(ParsedQuoteReturn[0])
-			if err != nil{
-				//error
-			
-			}
-			stockSymbol = ParsedQuoteReturn[1]
-			ReturnUserId := ParsedQuoteReturn[2]
-			msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
-			if err != nil{
-				//error
-			
-			}
-			cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
+		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
+		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
+		if err != nil{
+			//error
+		
+		}
+		stockSymbol = ParsedQuoteReturn[1]
+		ReturnUserId := ParsedQuoteReturn[2]
+		msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
+		if err != nil{
+			//error
+		
+		}
+		cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
 
-			if ReturnUserId != APIUserId {
-				// system error
+		if ReturnUserId != APIUserId {
+			// system error
 
-			}
+		}
 
-			QuoteEvent := QuoteServerEvent{
+		QuoteEvent := QuoteServerEvent{
 			EventType       : "QuoteServerEvent",
 			Guid            : Guid,
 			OccuredAt       : time.Now(),
@@ -229,27 +243,23 @@ func handleConnection(conn net.Conn){
 			StockSymbol     : stockSymbol,
 			QuoteServerTime : msTimeStamp,
 			Cryptokey       : cryptoKey,
-			}
-			SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
-			tmpQuoteItem := QuoteCacheItem{
-		    	    Expiration 		    : time.Now().Add(time.Duration(time.Second*60)),
-		       	    Value		    : price.String(),
-			}
-			// update map
-			memMutex.Lock()
-			memCache[stockSymbol] = tmpQuoteItem
-			QuoteItem = tmpQuoteItem
-			memMutex.Unlock()
-			messages <- "Done"
-			_, err = conn.Write([]byte(QuoteItem.Value))
-			if err != nil {
-			    // system error
-			}
-		}()
-		i := 1
-                for(i <= 4){
+		}
+		SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
+		tmpQuoteItem := QuoteCacheItem{
+	    	    Expiration 		    : time.Now().Add(time.Duration(time.Second*60)),
+	       	    Value		    : price.String(),
+		}
+		// update map
+		memMutex.Lock()
+		memCache[stockSymbol] = tmpQuoteItem
+		QuoteItem = tmpQuoteItem
+		memMutex.Unlock()
+		_, err = conn.Write([]byte(QuoteItem.Value))
+		if err != nil {
+		    // system error
+		}
+		for i := 0; i < 1; i++ {
 			<- messages
-			i++
 		}
 		close(messages)
 	}else{
@@ -273,13 +283,13 @@ func handleConnection(conn net.Conn){
 		    // system error
 		}
 	}
+	return
 }
-
 
 func main(){
     memCache = map[string]QuoteCacheItem{}
-    
     var rhost string
+
     flag.StringVar(&rhost,"rhost","b134.seng.uvic.ca","name of host for RabbitMQ")
 
     var rport string
