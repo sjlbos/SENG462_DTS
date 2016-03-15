@@ -5,12 +5,13 @@ DROP TABLE IF EXISTS triggers CASCADE;
 DROP TYPE IF EXISTS transaction_type CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS pending_transactions CASCADE;
+DROP TABLE IF EXISTS pending_triggers CASCADE;
 
 
 CREATE TABLE IF NOT EXISTS users(
 	id SERIAL PRIMARY KEY,
 	user_id varchar NOT NULL UNIQUE,
-	balance money NOT NULL DEFAULT 0.00 CHECK(balance > 0::money),
+	balance money NOT NULL DEFAULT 0.00 CHECK(balance >= 0::money),
 	created_at timestamptz default current_timestamp
 );
 
@@ -31,6 +32,17 @@ CREATE TABLE IF NOT EXISTS triggers(
 	type trigger_type NOT NULL,
 	trigger_price money CHECK(trigger_price >= 0::money),
 	num_shares int NOT NULL CHECK(num_shares > 0),
+	created_at timestamptz NOT NULL,
+	FOREIGN KEY (uid) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	UNIQUE (uid, stock, type)
+);
+
+CREATE TABLE IF NOT EXISTS pending_triggers(
+	id SERIAL PRIMARY KEY,
+	uid int NOT NULL,
+	stock varchar NOT NULL,
+	type trigger_type NOT NULL,
+	dollar_amount money CHECK(dollar_amount >= 0::money),
 	created_at timestamptz NOT NULL,
 	FOREIGN KEY (uid) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
 	UNIQUE (uid, stock, type)
@@ -379,60 +391,107 @@ $$
 LANGUAGE SQL VOLATILE;
 
 
+CREATE OR REPLACE FUNCTION get_pending_trigger_for_user_and_stock( _uid int, _stock varchar, _type trigger_type)
+RETURNS TABLE ( id int,
+				uid int,
+				stock varchar,
+				type trigger_type,
+				dollar_amount money,
+				created_at timestamptz) AS
+$$
+	SELECT id,
+		   uid,
+		   stock,
+		   type,
+		   dollar_amount,
+		   created_at
+	FROM pending_triggers
+	WHERE uid = _uid
+		AND stock = _stock
+		AND type = _type;
+$$
+LANGUAGE SQL VOLATILE;
+
 
 CREATE OR REPLACE FUNCTION add_buy_trigger(
 	_uid int,
 	_stock varchar,
-	_trigger_price money,
-	_num_shares int,
+	_dollar_amount money,
 	_created_at timestamptz
 )
 RETURNS int AS
 $$
-	INSERT INTO triggers(
+DECLARE
+	_transaction_id int;
+	_balance money;
+BEGIN
+	SELECT balance INTO _balance FROM users WHERE id = _uid;
+
+	UPDATE users SET balance = _balance - _dollar_amount;
+
+	INSERT INTO pending_triggers(
 		uid,
 		stock,
 		type,
-		trigger_price,
-		num_shares,
+		dollar_amount,
 		created_at
 		)
 	VALUES(
 		_uid,
 		_stock,
 		'buy',
-		_trigger_price,
-		_num_shares,
+		_dollar_amount,
 		_created_at
 		)
-	RETURNING id;
+	RETURNING id INTO _transaction_id;
+
+	RETURN _transaction_id;
+END;
 $$
-LANGUAGE SQL VOLATILE;
+LANGUAGE 'plpgsql' VOLATILE;
 
 
 
 CREATE OR REPLACE FUNCTION commit_buy_trigger(
 	_id int,
+	_stock_price money,
+	_num_shares int,
 	_made_at timestamptz
 )
 RETURNS int AS
 $$
 DECLARE
-	_transaction_id int;
+	rtnMoney money;
+	moneySaved money;
+	_user_id int;
 BEGIN
-	_transaction_id = perform_purchase_transaction((
-		SELECT 	uid,
-				stock,
-				num_shares,
-				share_price,
-				_made_at
-		FROM triggers
-		WHERE id = _id
-		));
+	INSERT INTO triggers(
+					uid, 
+					stock, 
+					type, 
+					created_at,
+					num_shares,
+					trigger_price)
+	(	SELECT
+			uid,
+			stock,
+			type,
+			current_timestamp,
+			_num_shares,
+			_stock_price
+		FROM pending_triggers
+		WHERE id = _id)
+	RETURNING uid INTO _user_id;
 
-	DELETE FROM triggers WHERE id = _id;
+	SELECT dollar_amount INTO moneySaved 
+	FROM pending_triggers 
+	WHERE uid = _user_id;
 
-	RETURN _transaction_id;
+	rtnMoney = moneySaved - (_stock_price * _num_shares);
+	UPDATE users SET balance = balance + rtnMoney WHERE id = _user_id;
+
+	DELETE FROM pending_triggers WHERE id = _id;
+	RETURN _id;
 END;
 $$
 LANGUAGE 'plpgsql' VOLATILE;
@@ -495,21 +554,6 @@ $$
 	RETURNING id;
 $$
 LANGUAGE SQL VOLATILE;
-
-
-
-CREATE OR REPLACE FUNCTION set_trigger_price(
-	_id int,
-	_trigger_price money
-)
-RETURNS void AS 
-$$
-	UPDATE triggers 
-	SET trigger_price = _trigger_price 
-	WHERE id = _id;
-$$
-LANGUAGE SQL VOLATILE;
-
 
 
 CREATE OR REPLACE FUNCTION cancel_trigger(
