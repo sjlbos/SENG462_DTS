@@ -10,6 +10,10 @@ import (
     "database/sql"
     "fmt"
     "os"
+    "runtime/pprof"
+    "encoding/json"
+    "netpool"
+    //"sync"
 )
 
 const (
@@ -28,8 +32,9 @@ var db *sql.DB
 var err error
 var rconn *amqp.Connection
 var ch *amqp.Channel
-
 var quoteCache net.Conn
+var QuoteNetpool *netpool.Netpool
+//var NetpoolMutex *sync.Mutex
 
 var getUserId string = "SELECT * FROM \"get_user_account_by_char_id\"($1)"
 var addUser string = "SELECT * FROM \"add_user_account\"($1::varchar, $2::money, $3::timestamptz)"
@@ -46,35 +51,56 @@ var Hostname string
 
 func main() {
 
-    var qhost string
-    flag.StringVar(&qhost, "qhost", "localhost", "name of quoteCache")
+    type Configuration struct {
+        RabbitHost     string
+	RabbitPort     string
+	HostPort       string
+	QuoteCacheHost string
+	QuoteCachePort string
+    }
+    file, err := os.Open("conf.json")
+    if err != nil {
+        fmt.Println("error:", err)
+    }
+    decoder := json.NewDecoder(file)
+    configuration := Configuration{}
+    err = decoder.Decode(&configuration)
+    if err != nil {
+        fmt.Println("error:", err)
+    }
 
-    var qport string
-    flag.StringVar(&qport, "qport", "localhost", "port number for quoteCache")
+    var qhost string = configuration.QuoteCacheHost
+    var qport string = configuration.QuoteCachePort
+    var rhost string = configuration.RabbitHost
+    var rport string = configuration.RabbitPort
+    var port string = configuration.HostPort
 
-    var rhost string
-    flag.StringVar(&rhost,"rhost","localhost","name of host for RabbitMQ")
+    println("Connected to Rabbit: " + rhost + ":" + rport)
+    println("Connected to QuoteCache: " + qhost + ":" + qport)
+    println("Running locally on port " + port)
 
-    var rport string
-    flag.StringVar(&rport,"rport","5672", "port number for RabbitMQ")
-
-    var port string
-    flag.StringVar(&port, "port","44411","port to run Router off of")
-    
-    flag.BoolVar(&rabbitAudit,"audit",false,"should actions be audited to RabbitMQ")
-
+    var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
     flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            log.Fatal(err)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
+
+    quoteCacheConnectionString = qhost + ":" + qport
         
     rabbitConnectionString = "amqp://dts_user:Group1@" + rhost + ":" + rport + "/"
-    quoteCacheConnectionString = qhost + ":" + qport
 
 
     dbinfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)
     db, err = sql.Open("postgres", dbinfo)
     failOnError(err, "Failed to connect to DTS Database")
 
-    db.SetMaxOpenConns(10)
-    db.SetMaxIdleConns(10)
+    db.SetMaxOpenConns(50)
+    db.SetMaxIdleConns(50)
 
 
     Hostname, err := os.Hostname()

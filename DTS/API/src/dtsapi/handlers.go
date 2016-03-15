@@ -1,22 +1,21 @@
 package main
 
 import (
-    "encoding/json"
-    "fmt"
-    "net"
-    "net/http"
-    "os"
-    "log"
-    "strings"
-    "strconv"
-    "time"
-    "bytes"
-//    "github.com/shopspring/decimal"
-//    "io/ioutil"
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"log"
+	"strings"
+	"strconv"
+	"time"
+	"bytes"
+	//"errors"
+	//_"netpool"
 
-//    "github.com/gorilla/mux"
-    "github.com/streadway/amqp"
-    "github.com/nu7hatch/gouuid"
+	"github.com/streadway/amqp"
+	"github.com/nu7hatch/gouuid"
 )
 
 type QuoteServerEvent struct{
@@ -156,34 +155,25 @@ type DebugEvent struct{
     DebugMessage    : "",   
 }*/
 
+
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
-    strEcho :=  TransId + "," + getNew + "," + UserId + "," + StockId + "," + guid + "\n"
+	strEcho :=  TransId + "," + getNew + "," + UserId + "," + StockId + "," + guid + "\n"
+	var qconn net.Conn
+	for qconn == nil {
+		addr, _ := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
+		qconn, _ = net.DialTCP("tcp", nil, addr)
+	}
+	
+	_, err = qconn.Write([]byte(strEcho))
+	if err != nil {
+	println("Write to server failed:", err.Error())
+	os.Exit(1)
+	}
 
-    tcpAddr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
-    if err != nil {
-        println("ResolveTCPAddr failed:", err.Error())
-        os.Exit(1)
-    }
-
-    qconn, err := net.DialTCP("tcp", nil, tcpAddr)
-    if err != nil {
-        println("Dial failed:", err.Error())
-        os.Exit(1)
-    }
-
-    _, err = qconn.Write([]byte(strEcho))
-    if err != nil {
-        println("Write to server failed:", err.Error())
-        os.Exit(1)
-    }
-    
-    reply := make([]byte, 1024)
-    _, err = qconn.Read(reply)
-    reply = bytes.Trim(reply, "\x00")
-    qconn.Close()
-    println(string(reply))
-
-    return string(reply)
+	reply := make([]byte, 100)
+	_, err = qconn.Read(reply)
+	reply = bytes.Trim(reply, "\x00")
+	return string(reply)
 }
 
 func stripCtlAndExtFromUTF8(str string) string {

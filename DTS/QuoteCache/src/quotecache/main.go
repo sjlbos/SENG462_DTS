@@ -8,7 +8,8 @@ import(
 	"github.com/shopspring/decimal"
 	"github.com/streadway/amqp"
 	"fmt"
-	"flag"
+	//"flag"
+	"os"
 	"log"
 	"encoding/json"
 	"strconv"
@@ -87,7 +88,7 @@ type QuoteCacheItem struct{
 
 var memCache map[string]QuoteCacheItem
 var memMutex sync.Mutex
-var readMutex sync.Mutex
+//var readMutex sync.Mutex
 
 var maxconns int
 
@@ -96,6 +97,7 @@ var rconn *amqp.Connection
 var ch *amqp.Channel
 
 var err error
+var quotePort string
 
 
 func stripCtlAndExtFromUTF8(str string) string {
@@ -154,10 +156,11 @@ func msToTime(ms string) (time.Time, error) {
 
 func handleConnection(conn net.Conn){
 	status := make([]byte, 100)
-
-	readMutex.Lock()
-    	_, err = conn.Read(status)
-	readMutex.Unlock()
+	_,err := conn.Read(status)
+	if err != nil{
+		// do stuff
+	}
+	
 	status = bytes.Trim(status, "\x00")
 
 	inputs := strings.Split(string(status), ",")
@@ -179,9 +182,7 @@ func handleConnection(conn net.Conn){
 	num_threads := 2
 
 	if !getNew {
-		memMutex.Lock()
 		QuoteItem, found = memCache[stockSymbol]
-		memMutex.Unlock()
 		if found{
 			if QuoteItem.Expiration.Before(time.Now()){
 				found = false
@@ -189,13 +190,13 @@ func handleConnection(conn net.Conn){
 		}
 	}
 
-	
+
 	if !found {
-                messages := make(chan string)
+	        messages := make(chan string)
 		for num_threads > 0 {
 			go func() {
 				sendString := stockSymbol + "," + APIUserId + "\n"
-				qconn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:4441")
+				qconn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
 				if err != nil {
 					//
 				}
@@ -215,14 +216,14 @@ func handleConnection(conn net.Conn){
 		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
 		if err != nil{
 			//error
-		
+	
 		}
 		stockSymbol = ParsedQuoteReturn[1]
 		ReturnUserId := ParsedQuoteReturn[2]
 		msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
 		if err != nil{
 			//error
-		
+	
 		}
 		cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
 
@@ -252,8 +253,8 @@ func handleConnection(conn net.Conn){
 		// update map
 		memMutex.Lock()
 		memCache[stockSymbol] = tmpQuoteItem
-		QuoteItem = tmpQuoteItem
 		memMutex.Unlock()
+		QuoteItem = tmpQuoteItem
 		_, err = conn.Write([]byte(QuoteItem.Value))
 		if err != nil {
 		    // system error
@@ -276,7 +277,7 @@ func handleConnection(conn net.Conn){
 			StockSymbol     : stockSymbol,
 			Funds           : "",
 			FileName        : "",
-	        }
+		}
 		SendRabbitMessage(SystemEvent,SystemEvent.EventType)
 		_, err = conn.Write([]byte(QuoteItem.Value))
 		if err != nil {
@@ -288,18 +289,34 @@ func handleConnection(conn net.Conn){
 
 func main(){
     memCache = map[string]QuoteCacheItem{}
-    var rhost string
 
-    flag.StringVar(&rhost,"rhost","b134.seng.uvic.ca","name of host for RabbitMQ")
+    type Configuration struct {
+        RabbitHost     string
+	RabbitPort     string
+	HostPort       string
+	QuotePort      string
+    }
+    file, err := os.Open("conf.json")
+    if err != nil {
+        fmt.Println("error:", err)
+    }
+    decoder := json.NewDecoder(file)
+    configuration := Configuration{}
+    err = decoder.Decode(&configuration)
+    if err != nil {
+        fmt.Println("error:", err)
+    }
 
-    var rport string
-    flag.StringVar(&rport,"rport","44410", "port number for RabbitMQ")
+    var rhost = configuration.RabbitHost
+    var rport = configuration.RabbitPort
+    var port  = configuration.HostPort
+    quotePort = configuration.QuotePort
 
-    var port string
-    flag.StringVar(&port,"port", "44410", "port number for Cache")
+    println("Connected to Rabbit: " + rhost + ":" + rport)
+    println("Connected to QuoteServer: " + "quoteserve.seng.uvic.ca:" + quotePort)
+    println("Running locally on port " + port)
 
     rabbitConnectionString = "amqp://dts_user:Group1@" + rhost + ":" + rport + "/"
-    println(rabbitConnectionString)
     rconn, err = amqp.Dial(rabbitConnectionString)
     failOnError(err, "Failed to connect to RabbitMQ")
     defer rconn.Close()

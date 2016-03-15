@@ -3,18 +3,11 @@ package main
 import (
     "encoding/json"
     "fmt"
-//    "net"
     "net/http"
-//    "os"
-//    "log"
     "strings"
     "strconv"
     "time"
-//    "io/ioutil"
-
     "github.com/gorilla/mux"
-//    "github.com/streadway/amqp"
-//    "github.com/nu7hatch/gouuid"
 )
 
 func Add(w http.ResponseWriter, r *http.Request){
