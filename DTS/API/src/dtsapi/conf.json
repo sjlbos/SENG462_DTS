@@ -1,0 +1,7 @@
+{
+	"RabbitHost"     : "B134.seng.uvic.ca",
+	"RabbitPort"     : "44410",
+	"HostPort"       : "44410",
+	"QuoteCacheHost" : "B143.seng.uvic.ca",
+	"QuoteCachePort" : "44410"
+}
