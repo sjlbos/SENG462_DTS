@@ -3,6 +3,7 @@ import argparse
 import pika
 import json
 import Queue
+import urllib2
 
 parser = argparse.ArgumentParser(description='Workload Generator for Distributed System')
 parser.add_argument('--filename', nargs='?')
@@ -109,78 +110,78 @@ def encode_Command(obj):
     return obj
 
 def getAddCommand(User, Amount, Id):
-	uri = url + "/api/users/" + User + "/" + Id
-	json_string = '{ "Amount" : ' + Amount + ' }'
+	uri = url + "/api/users/" + User
+	json_string = '{ "strAmount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol+ "/" + Id
+	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases" + "/" + Id
-	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
+	uri = url + "/api/users/"+User+"/pending-purchases"
+	json_string = '{"Symbol" : "' + StockSymbol + '", "strAmount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases/commit" + "/" + Id
+	uri = url + "/api/users/"+User+"/pending-purchases/commit"
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases" + "/" + Id
+	uri = url + "/api/users/"+User+"/pending-purchases"
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSellCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-sales" + "/" + Id
-	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
+	uri = url + "/api/users/"+User+"/pending-sales"
+	json_string = '{"Symbol" : "' + StockSymbol + '", "strAmount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales/commit"+ "/" + Id
+	uri = url + "/api/users/"+User+"/pending-sales/commit"
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales"+ "/" + Id
+	uri = url + "/api/users/"+User+"/pending-sales"
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol + "/" + Id
-	json_string = '{"Amount" : ' + Amount + '}'
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	json_string = '{"strAmount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol+ "/" + Id
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol + "/" + Id
+	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	json_string = '{"Price" : ' + Price + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol+ "/" + Id
-	json_string = '{"Amount" : ' + Amount + '}'
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	json_string = '{"strAmount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol + "/" + Id
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	json_string = '{"Price" : ' + Price + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol + "/" + Id
+	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getDumplogUserCommand(User,Id):
-	uri = url + "/api/users/"+User+"/transactions"+ "/" + Id
+	uri = url + "/api/users/"+User+"/transactions"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDumplogCommand(Id):
-	uri = url + "/api/users/transactions"+ "/" + Id
+	uri = url + "/api/users/transactions"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDisplaySummaryCommand(User, Id):
-	uri = url + "/api/users/"+User+"/summary"+ "/" + Id
+	uri = url + "/api/users/"+User+"/summary"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 #Open File
@@ -277,6 +278,7 @@ def callback(ch, method, properties, body):
     global workerSum
     global sent_messages
     global num_Slaves
+    global outputFile
     jsonVal = json.loads(body)
     print(" [x] Done")
     print jsonVal
@@ -297,6 +299,11 @@ def callback(ch, method, properties, body):
 		channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
 		sent_messages = sent_messages + 1
 		print("Getting XML File")
+		f = open(outputFile, 'w')
+		output = urllib2.urlopen("http://B136.seng.uvic.ca/audit/transactions/" + outputFile)
+		f.write(output)
+
+
 
 print("Waiting for workers")
 for i in range(int(num_Slaves)):

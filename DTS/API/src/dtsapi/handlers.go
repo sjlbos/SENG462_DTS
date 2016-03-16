@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 	"bytes"
+    "database/sql"
 	//"errors"
 	//_"netpool"
 
@@ -155,6 +156,19 @@ type DebugEvent struct{
     DebugMessage    : "",   
 }*/
 
+type TriggerEvent struct{
+    TriggerType     string
+    UserId          string
+    TransactionId   string
+    UpdatedAt       time.Time
+}
+
+/*q := TriggerEvent{
+    TriggerType     : "buy" "sell",
+    UserId          : "",
+    TransactionId   : "",
+    UpdatedAt       : ""
+}*/
 
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
 	strEcho :=  TransId + "," + getNew + "," + UserId + "," + StockId + "," + guid + "\n"
@@ -204,6 +218,14 @@ func getNewGuid() (uuid.UUID){
     return *guid
 }
 
+func getDatabasePointerForUser(userid string) (*sql.DB){
+    var hash = 0
+    for i := range userid {
+        hash += int(userid[i]);
+    }
+    return dbPointers[hash % len(dbPointers)];
+} 
+
 func msToTime(ms string) (time.Time, error) {
     msInt, err := strconv.ParseInt(ms, 10, 64)
     if err != nil {
@@ -219,6 +241,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func SendRabbitMessage(message interface{}, EventType string){
     q := message
+    var mainKey string = "TransactionEvent"
+
 
     if(EventType == "QuoteServerEvent"){
         q = message.(QuoteServerEvent)
@@ -232,6 +256,9 @@ func SendRabbitMessage(message interface{}, EventType string){
         q = message.(DebugEvent)
     }else if(EventType == "SystemEvent"){
         q = message.(SystemEvent)
+    }else if(EventType == "buy" || EventType =="sell"){
+        q = message.(TriggerEvent)
+        mainKey = "Triggers"
     }else{
        panic("NOT YET IMPLEMENTED")
     }
@@ -240,7 +267,7 @@ func SendRabbitMessage(message interface{}, EventType string){
     
     err = ch.Publish(
         "DtsEvents",          // exchange
-        "TransactionEvent." + EventType, // routing key
+        mainKey + "." + EventType, // routing key
         false, // mandatory
         false, // immediate
         amqp.Publishing{
@@ -252,15 +279,14 @@ func SendRabbitMessage(message interface{}, EventType string){
 
 
 
-func getDatabaseUserId(userId string, commandStr string) (int, bool, string){
+func getDatabaseUserId(userId string) (int, bool, string){
+    db := getDatabasePointerForUser(userId)
     rows, err := db.Query(getUserId, userId)
-    failOnError(err, "Failed to Create Statement: getUserId for add.go")
+    failOnError(err, "Failed to Create Statement: getUserId")
     found := false
     var id int
     var userid string
     var balanceStr string
-
-
     for rows.Next() {
        found = true
        err = rows.Scan(&id, &userid, &balanceStr)

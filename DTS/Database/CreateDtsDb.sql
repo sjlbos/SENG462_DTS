@@ -365,6 +365,17 @@ $$
 $$
 LANGUAGE SQL VOLATILE;
 
+CREATE OR REPLACE FUNCTION get_buy_trigger_id_for_user_and_stock(_uid int, _stock varchar)
+RETURNS TABLE (	id int ) AS
+$$
+	SELECT 	id
+	FROM triggers
+	WHERE uid = _uid
+		AND stock = _stock
+		AND type = 'buy';
+$$
+LANGUAGE SQL VOLATILE;
+
 
 
 CREATE OR REPLACE FUNCTION get_sell_trigger_for_user_and_stock(_uid int, _stock varchar)
@@ -391,20 +402,23 @@ $$
 LANGUAGE SQL VOLATILE;
 
 
-CREATE OR REPLACE FUNCTION get_pending_trigger_for_user_and_stock( _uid int, _stock varchar, _type trigger_type)
-RETURNS TABLE ( id int,
-				uid int,
-				stock varchar,
-				type trigger_type,
-				dollar_amount money,
-				created_at timestamptz) AS
+CREATE OR REPLACE FUNCTION get_sell_trigger_id_for_user_and_stock(_uid int, _stock varchar)
+RETURNS TABLE (	id int ) AS
 $$
-	SELECT id,
-		   uid,
-		   stock,
-		   type,
-		   dollar_amount,
-		   created_at
+	SELECT 	id
+	FROM triggers
+	WHERE uid = _uid 
+		AND stock = _stock
+		AND type = 'sell';
+$$
+LANGUAGE SQL VOLATILE;
+
+
+
+CREATE OR REPLACE FUNCTION get_pending_trigger_id_for_user_and_stock( _uid int, _stock varchar, _type trigger_type)
+RETURNS TABLE ( id int ) AS
+$$
+	SELECT id
 	FROM pending_triggers
 	WHERE uid = _uid
 		AND stock = _stock
@@ -451,20 +465,53 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+CREATE OR REPLACE FUNCTION add_sell_trigger(
+	_uid int,
+	_stock varchar,
+	_dollar_amount money,
+	_created_at timestamptz
+)
+RETURNS int AS
+$$
+	INSERT INTO pending_triggers(
+		uid,
+		stock,
+		type,
+		dollar_amount,
+		created_at
+		)
+	VALUES(
+		_uid,
+		_stock,
+		'sell',
+		_dollar_amount,
+		_created_at
+		)
+	RETURNING id;
+$$
+LANGUAGE SQL VOLATILE;
+
+
 
 CREATE OR REPLACE FUNCTION commit_buy_trigger(
 	_id int,
+	_uid int,
 	_stock_price money,
-	_num_shares int,
 	_made_at timestamptz
 )
 RETURNS int AS
 $$
 DECLARE
+	num_shares int;
 	rtnMoney money;
 	moneySaved money;
-	_user_id int;
 BEGIN
+	SELECT dollar_amount INTO moneySaved 
+	FROM pending_triggers 
+	WHERE uid = _uid;
+
+	num_shares = moneySaved / _stock_price;
+
 	INSERT INTO triggers(
 					uid, 
 					stock, 
@@ -480,12 +527,7 @@ BEGIN
 			_num_shares,
 			_stock_price
 		FROM pending_triggers
-		WHERE id = _id)
-	RETURNING uid INTO _user_id;
-
-	SELECT dollar_amount INTO moneySaved 
-	FROM pending_triggers 
-	WHERE uid = _user_id;
+		WHERE id = _id);
 
 	rtnMoney = moneySaved - (_stock_price * _num_shares);
 	UPDATE users SET balance = balance + rtnMoney WHERE id = _user_id;
@@ -500,24 +542,45 @@ LANGUAGE 'plpgsql' VOLATILE;
 
 CREATE OR REPLACE FUNCTION commit_sell_trigger(
 	_id int,
+	_uid int,
+	_stock_price money,
 	_made_at timestamptz
 )
 RETURNS int AS
 $$
 DECLARE
 	_transaction_id int;
+	_num_shares int;
+	_stock varchar;
+	moneySaved money;
 BEGIN
-	_transaction_id = perform_sale_transaction((
-		SELECT 	uid,
-			stock,
-			num_shares,
-			share_price,
-			_made_at
-		FROM triggers
-		WHERE id = _id
-		));
+	SELECT dollar_amount INTO moneySaved 
+	FROM pending_triggers 
+	WHERE id = _id;
 
-	DELETE FROM triggers WHERE id = _id;
+	_num_shares = moneySaved / _stock_price;
+
+	INSERT INTO triggers(
+				uid, 
+				stock, 
+				type, 
+				created_at,
+				num_shares,
+				trigger_price)
+	(	SELECT
+			uid,
+			stock,
+			type,
+			current_timestamp,
+			_num_shares,
+			_stock_price
+		FROM pending_triggers
+		WHERE id = _id)
+		RETURNING stock INTO _stock;
+
+	UPDATE portfolios SET num_shares = num_shares - _num_shares WHERE uid = _uid and stock = _stock;
+
+	DELETE FROM pending_triggers WHERE id = _id RETURNING id INTO _transaction_id;
 
 	RETURN _transaction_id;
 END;
@@ -525,46 +588,55 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
-
-CREATE OR REPLACE FUNCTION add_sell_trigger(
-	_uid int,
-	_stock varchar,
-	_trigger_price money,
-	_num_shares int,
-	_created_at timestamptz
-)
-RETURNS int AS
-$$
-	INSERT INTO triggers(
-		uid,
-		stock,
-		type,
-		trigger_price,
-		num_shares,
-		created_at
-		)
-	VALUES(
-		_uid,
-		_stock,
-		'sell',
-		_trigger_price,
-		_num_shares,
-		_created_at
-		)
-	RETURNING id;
-$$
-LANGUAGE SQL VOLATILE;
-
-
-CREATE OR REPLACE FUNCTION cancel_trigger(
+CREATE OR REPLACE FUNCTION cancel_buy_trigger(
 	_id int
 )
 RETURNS void AS
 $$
+DECLARE
+	_dollar_amount money;
+	_user_id int;
+BEGIN
+	SELECT trigger_price * num_shares, uid INTO _dollar_amount, _user_id
+	FROM triggers
+	WHERE id = _id;	
+
+	UPDATE users SET balance = balance + _dollar_amount WHERE id = _user_id;
+
 	DELETE FROM triggers 
 	WHERE id = _id;
+END;
 $$
-LANGUAGE SQL VOLATILE;
+LANGUAGE 'plpgsql' VOLATILE;
+
+
+
+CREATE OR REPLACE FUNCTION cancel_sell_trigger(
+	_id int
+)
+RETURNS void AS
+$$
+DECLARE
+	_num_shares int;
+	_user_id int;
+	_stock varchar;
+BEGIN
+
+	SELECT num_shares, uid, stock INTO _num_shares, _user_id, _stock
+	FROM triggers
+	WHERE id = _id;
+
+	INSERT INTO portfolios AS p (uid, stock, num_shares)
+	VALUES (_user_id, _stock, _num_shares)
+	ON CONFLICT (uid, stock)
+	DO UPDATE SET num_shares = p.num_shares + _num_shares
+	WHERE p.uid = _user_id and p.stock = _stock; 
+
+	DELETE FROM triggers 
+	WHERE id = _id;
+END;
+$$
+LANGUAGE 'plpgsql' VOLATILE;
 
 
 

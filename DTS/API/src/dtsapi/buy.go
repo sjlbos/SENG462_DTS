@@ -27,7 +27,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
     }
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     decoder := json.NewDecoder(r.Body)
     var t buy_struct   
@@ -43,6 +43,8 @@ func Buy(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, t.strAmount)
     fmt.Fprintln(w, StockId)
+
+    db := getDatabasePointerForUser(UserId)
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -71,7 +73,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
         return;
     }
 
-    id, found, _ := getDatabaseUserId(UserId, "BUY") 
+    id, found, _ := getDatabaseUserId(UserId) 
     if(found == false){
         Error := ErrorEvent{
             EventType       : "ErrorEvent",
@@ -85,9 +87,10 @@ func Buy(w http.ResponseWriter, r *http.Request){
             StockSymbol     : "",
             Funds           : t.strAmount,
             FileName        : "",
-            ErrorMessage    : "Error occured",   
+            ErrorMessage    : "User Does not Exist",   
         }
         SendRabbitMessage(Error,Error.EventType)
+        return
     }else{
 	toBuy := (Amount.Div(quotePrice)).Floor()
         _, err = db.Exec(addPendingPurchase, id, t.Symbol, toBuy.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
@@ -107,7 +110,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
     		    ErrorMessage    : "Failed to create purchase",   
     		}
     		SendRabbitMessage(Error,Error.EventType)
-                err = nil
+            return
         }
     }
 }
@@ -116,9 +119,14 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Last Buy Command Commited:") 
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     fmt.Fprintln(w, UserId)
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -135,7 +143,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType); 
-    id, found, _ := getDatabaseUserId(UserId, "COMMIT_BUY") 
+    id, found, _ := getDatabaseUserId(UserId) 
 
     if(found == false){
         Error := ErrorEvent{
@@ -212,9 +220,14 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Last Buy Command Cancelled:") 
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     fmt.Fprintln(w, UserId) 
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -231,7 +244,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
         Funds           : "",
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-    id, found, _ := getDatabaseUserId(UserId, "CANCEL_BUY") 
+    id, found, _ := getDatabaseUserId(UserId) 
 
     if(found == false){
         Error := ErrorEvent{

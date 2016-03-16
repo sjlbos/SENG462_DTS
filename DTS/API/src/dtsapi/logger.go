@@ -14,9 +14,8 @@ func Logger(inner http.Handler, name string) http.Handler {
         inner.ServeHTTP(w, r)
 
         log.Printf(
-            "%s\t%s\t%s\t%s",
-            r.Method,
-            r.RequestURI,
+            "%s\t%s\t%s",
+            r.Header.Get("TransNo"),
             name,
             time.Since(start),
         )

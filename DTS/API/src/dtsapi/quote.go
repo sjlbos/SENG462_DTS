@@ -22,7 +22,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
     vars := mux.Vars(r)
     StockId := vars["symbol"]
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     //Audit UserCommand
     Guid := getNewGuid()

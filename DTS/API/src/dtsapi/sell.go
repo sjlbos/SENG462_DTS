@@ -29,7 +29,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
     }
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     decoder := json.NewDecoder(r.Body)
     var t sell_struct   
@@ -45,6 +45,11 @@ func Sell(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, t.strAmount)
     fmt.Fprintln(w, StockId)
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -74,7 +79,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
         return;
     }
 
-    id, found, _ := getDatabaseUserId(UserId, "SELL") 
+    id, found, _ := getDatabaseUserId(UserId) 
     if(found == false){
         Error := ErrorEvent{
             EventType       : "ErrorEvent",
@@ -119,9 +124,14 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Last Sell Command Commited:") 
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     fmt.Fprintln(w, UserId) 
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -140,7 +150,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    id, found, _ := getDatabaseUserId(UserId, "COMMIT_BUY") 
+    id, found, _ := getDatabaseUserId(UserId) 
 
     if(found == false){
         Error := ErrorEvent{
@@ -217,9 +227,14 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Last Sell Command Cancelled:") 
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
 
     fmt.Fprintln(w, UserId) 
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -238,7 +253,7 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    id, found,_ := getDatabaseUserId(UserId, "CANCEL_BUY") 
+    id, found,_ := getDatabaseUserId(UserId) 
 
     if(found == false){
         Error := ErrorEvent{

@@ -5,31 +5,38 @@ import (
     "fmt"
     "net/http"
     "strings"
-    "strconv"
+//    "strconv"
     "time"
     "github.com/gorilla/mux"
+    "github.com/shopspring/decimal"
 )
 
 func Add(w http.ResponseWriter, r *http.Request){
+    zero,_ := decimal.NewFromString("0");
     fmt.Fprintln(w, "Adding Funds to account:")
     type add_struct struct {
-        Amount float64
+        strAmount string
     }
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := vars["TransNo"]
+    TransId := r.Header.Get("TransNo")
     
     decoder := json.NewDecoder(r.Body)
     var t add_struct   
     err := decoder.Decode(&t)
 
-    strAmount := strconv.FormatFloat(t.Amount, 'f', -1, 64)
+    Amount,err := decimal.NewFromString(t.strAmount)
 
     if err != nil {
 
     }
     fmt.Fprintln(w, UserId)
-    fmt.Fprintln(w, t.Amount)
+    fmt.Fprintln(w, t.strAmount)
+
+    db := getDatabasePointerForUser(UserId)
+    if err != nil{
+        //error
+    }
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -43,14 +50,16 @@ func Add(w http.ResponseWriter, r *http.Request){
         Server          : Hostname,
         Command         : "ADD",
         StockSymbol     : "",
-        Funds           : strAmount,
+        Funds           : t.strAmount,
     }
     SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 
-    var balanceFloat float64
-    id, found, balanceStr := getDatabaseUserId(UserId, "ADD") 
+    var balanceStr string
+    var balance decimal.Decimal
+
+    id, found, balanceStr := getDatabaseUserId(UserId) 
     if(found == false){
-    	/*Debug := DebugEvent{
+    	Debug := DebugEvent{
             EventType       : "DebugEvent",
     	    Guid            : Guid.String(),
     	    OccuredAt       : time.Now(),
@@ -60,15 +69,15 @@ func Add(w http.ResponseWriter, r *http.Request){
     	    Server          : Hostname,
     	    Command         : "ADD",
     	    StockSymbol     : "",
-           	Funds           : strAmount,
+           	Funds           : t.strAmount,
     	    FileName        : "",
     	    DebugMessage    : "Created User Account",   
-        }*/
-        //SendRabbitMessage(Debug,Debug.EventType)
-        Addrows, _ := db.Query(addUser, UserId, strAmount, time.Now())
+        }
+        SendRabbitMessage(Debug,Debug.EventType)
+        Addrows, _ := db.Query(addUser, UserId, t.strAmount, time.Now())
         defer Addrows.Close()
     }else{
-        if(t.Amount < 0){
+        if(Amount.Cmp(zero) == -1){
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
                 Guid            : Guid.String(),
@@ -79,15 +88,15 @@ func Add(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "ADD",
                 StockSymbol     : "",
-                Funds           : strAmount,
+                Funds           : t.strAmount,
                 FileName        : "",
                 ErrorMessage    : "Amount to add is not a valid number",   
             }
             SendRabbitMessage(Error,Error.EventType)
         }else{
             balanceStr = strings.TrimLeft(balanceStr, "$")
-            balanceFloat, err = strconv.ParseFloat(balanceStr, 64)
-            newBalance := balanceFloat + t.Amount
+            balance, err = decimal.NewFromString(balanceStr)
+            newBalance := balance.Add(Amount)
             AccountEvent := AccountTransactionEvent{
                 EventType       : "AccountTransactionEvent",
                 Guid            : Guid.String(),
@@ -97,7 +106,7 @@ func Add(w http.ResponseWriter, r *http.Request){
                 Service         : "Account",
                 Server          : Hostname,
                 AccountAction   : "Add",
-                Funds           : strAmount,
+                Funds           : t.strAmount,
             }
             SendRabbitMessage(AccountEvent,AccountEvent.EventType)
 
