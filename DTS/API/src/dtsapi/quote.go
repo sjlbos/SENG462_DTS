@@ -19,38 +19,58 @@ import (
 )
 
 func Quote(w http.ResponseWriter, r *http.Request){
-    vars := mux.Vars(r)
-    StockId := vars["symbol"]
-    UserId := vars["id"]
-    TransId := r.Header.Get("TransNo")
+	vars := mux.Vars(r)
+	StockId := vars["symbol"]
+	UserId := vars["id"]
+	TransId := r.Header.Get("TransNo")
 
-    //Audit UserCommand
-    Guid := getNewGuid()
-    CommandEvent := UserCommandEvent{
-        EventType       : "UserCommandEvent",
-        Guid            : Guid.String(),
-        OccuredAt       : time.Now(),
-        TransactionId   : TransId,
-        UserId          : UserId,
-        Service         : "Command",
-        Server          : "B134",
-        Command         : "QUOTE",
-        StockSymbol     : StockId,
-        Funds           : "",
-    }
-    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+	//Audit UserCommand
+	Guid := getNewGuid()
+	CommandEvent := UserCommandEvent{
+		EventType       : "UserCommandEvent",
+		Guid            : Guid.String(),
+		OccuredAt       : time.Now(),
+		TransactionId   : TransId,
+		UserId          : UserId,
+		Service         : "Command",
+		Server          : "B134",
+		Command         : "QUOTE",
+		StockSymbol     : StockId,
+		Funds           : "",
+	}
+	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-    var strPrice string
-    strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
-    
+	//Check Stock Symbol
+	if(len(StockId) == 0 || len(StockId) > 3){
+		Error := ErrorEvent{
+			EventType       : "ErrorEvent",
+			Guid            : Guid.String(),
+			OccuredAt       : time.Now(),
+			TransactionId   : TransId,
+			UserId          : UserId,
+			Service         : "API",
+			Server          : Hostname,
+			Command         : "ADD",
+			StockSymbol     : StockId,
+			Funds           : "",
+			FileName        : "",
+			ErrorMessage    : "Symbol is Not Valid",   
+		}
+		SendRabbitMessage(Error,Error.EventType)
+		writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
+		return
+	}
 
-    var price decimal.Decimal
-    price, err := decimal.NewFromString(strPrice)
-    if err != nil{
-        //error
-    }
-    fmt.Fprintln(w, UserId)
-    fmt.Fprintln(w, StockId)
-    fmt.Fprintln(w, price)
+	var strPrice string
+	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+
+
+	var price decimal.Decimal
+	price, err := decimal.NewFromString(strPrice)
+	if err != nil{
+		//error
+	}
+	var Output string = "The Quote For UserId " + UserId + " and StockId " + StockId + " returned " + price.String()
+	fmt.Fprintln(w, Output)
 
 }

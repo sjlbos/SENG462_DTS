@@ -44,7 +44,7 @@ func handleConnection(conn net.Conn){
 		stockSymbol := inputs[1]
 		QuoteItem, found = memCache[stockSymbol]
 		if found {
-			if QuoteItem.Expiration.Before(time.Now()){
+			if QuoteItem.Expiration.After(time.Now()){
 				fmt.Fprintf(conn, string(QuoteItem.Value))
 			}else{
 				found = false;
@@ -52,6 +52,23 @@ func handleConnection(conn net.Conn){
 		}
 		if !found {
 			fmt.Fprintf(conn, "-1")
+			status = make([]byte,100)
+			_,err := conn.Read(status)
+			if err != nil {
+			}
+			status = bytes.Trim(status, "\x00")
+
+			inputs := strings.Split(string(status), ",")
+			if inputs[0] == "SET"{
+				stockSymbol := inputs[1]
+				price 	    := inputs[2]
+
+				tmpQuoteItem := QuoteCacheItem{
+			    	    Expiration	: time.Now().Add(time.Duration(time.Second*45)),
+			       	    Value	: price,
+				}
+				memCache[stockSymbol] = tmpQuoteItem;
+			}
 		}
 	} else if inputs[0] == "SET"{
 		stockSymbol := inputs[1]

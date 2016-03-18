@@ -81,12 +81,7 @@ type SystemEvent struct{
     FileName        string
 }
 
-type QuoteCacheItem struct{
-	Expiration      time.Time
-	Value		string
-}
 
-var memCache map[string]QuoteCacheItem
 var memMutex sync.Mutex
 //var readMutex sync.Mutex
 
@@ -159,23 +154,24 @@ func msToTime(ms string) (time.Time, error) {
 }
 
 func handleConnection(conn net.Conn){
-	CacheConn, err := net.Dial("tcp", CacheHost + CachePort)
+	println(CacheHost + ":" + CachePort)
+	CacheConn, err := net.Dial("tcp", CacheHost + ":" + CachePort)
+	if err != nil{
+		// do stuff
+		return
+	}
 	status := make([]byte, 100)
 	_,err = conn.Read(status)
 	if err != nil{
 		// do stuff
+		return
 	}
 	
 	status = bytes.Trim(status, "\x00")
 
 	inputs := strings.Split(string(status), ",")
 
-	if len(inputs) != 4 {
-		//invalid input
-	}
-	var found bool
 	var price decimal.Decimal
-	var QuoteItem QuoteCacheItem
 
 	TransId 		:= inputs[0]
 	getNew, err 	:= strconv.ParseBool(inputs[1])
@@ -183,9 +179,7 @@ func handleConnection(conn net.Conn){
 	stockSymbol 	:= inputs[3]
 	Guid			:= inputs[4]
 
-	found = false
-
-	if !getNew {
+	if !getNew | getNew {
 		var requestString string = "GET," + stockSymbol
 		fmt.Fprintf(CacheConn, requestString)
 		cacheStatus := make([]byte, 100)
@@ -195,7 +189,7 @@ func handleConnection(conn net.Conn){
 		}
 		cacheStatus = bytes.Trim(cacheStatus, "\x00")
 		if(string(cacheStatus) != "-1"){
-			CacheConn.Write(cacheStatus)
+			conn.Write(cacheStatus)
 			debugEvent := DebugEvent{
 			    EventType       : "DebugEvent",
 			    Guid            : Guid,
@@ -215,26 +209,28 @@ func handleConnection(conn net.Conn){
 		}
 	}
 
-    messages := make(chan string)
-	for num_threads > 0 {
+	messages := make(chan string)
+	tmp_num_threads := num_threads;
+	for tmp_num_threads > 0 {
 		go func() {
 			sendString := stockSymbol + "," + APIUserId + "\n"
 			qconn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
 			if err != nil {
-				//
+				//error
 			}
 			_, err =fmt.Fprintf(qconn, sendString)
 			if err!= nil {
 				failOnError(err, "Error with fprintf")
 			}
 			response := make([]byte, 100)
-				_, err = qconn.Read(response)	
+			_, err = qconn.Read(response)	
 			messages <- string(response)
 			qconn.Close()
 		}()
-		num_threads -= 1
+		tmp_num_threads -= 1
 	}
 	QuoteReturn := <-messages
+	println("GOT IT " + QuoteReturn)
 	ParsedQuoteReturn := strings.Split(QuoteReturn,",")
 	price, err = decimal.NewFromString(ParsedQuoteReturn[0])
 	if err != nil{
@@ -269,13 +265,12 @@ func handleConnection(conn net.Conn){
 		Cryptokey       : cryptoKey,
 	}
 	SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
-	_, err = conn.Write([]byte(QuoteItem.Value))
+	_, err = conn.Write([]byte(price.String()))
 	var updateString string = "SET," + stockSymbol + "," + price.String()
 	_, err = CacheConn.Write([]byte(updateString))
 	if err != nil {
 	    // system error
 	}
-
 	for i := 0; i < num_threads-1; i++ {
 		<- messages
 	}
@@ -284,13 +279,14 @@ func handleConnection(conn net.Conn){
 }
 
 func main(){
-    memCache = map[string]QuoteCacheItem{}
 
     type Configuration struct {
         RabbitHost     string
 		RabbitPort     string
 		HostPort       string
 		QuotePort      string
+		CacheHost      string
+		CachePort      string
 		NumThreads     string
     }
     file, err := os.Open("conf.json")
@@ -308,6 +304,8 @@ func main(){
     var rport = configuration.RabbitPort
     var port  = configuration.HostPort
     quotePort = configuration.QuotePort
+    CacheHost = configuration.CacheHost
+    CachePort = configuration.CachePort
     num_threads,err = strconv.Atoi(configuration.NumThreads)
     if err != nil {
     	//error

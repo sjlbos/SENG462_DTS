@@ -12,7 +12,7 @@ import (
 func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Creating Buy Trigger:") 
     type trigger_struct struct{
-        strAmount string
+        Amount string
         Price  string
     }
 
@@ -32,11 +32,11 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
     }
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, Symbol)
-    fmt.Fprintln(w, t.strAmount)
+    fmt.Fprintln(w, t.Amount)
     fmt.Fprintln(w, t.Price)
 
     uid, found, _ := getDatabaseUserId(UserId)
-    Amount, err := decimal.NewFromString(t.strAmount)
+    AmountDec, err := decimal.NewFromString(t.Amount)
     if err != nil{
         //error
         return
@@ -49,7 +49,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
     //Audit UserCommand
     Guid := getNewGuid()
     OccuredAt := time.Now()
-    if(t.strAmount != ""){
+    if(t.Amount != ""){
 	    CommandEvent := UserCommandEvent{
     		EventType       : "UserCommandEvent",
     		Guid            : Guid.String(),
@@ -63,7 +63,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
     		Funds           : "",
 	    }
 	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-        _, err = db.Exec(addBuyTrigger, uid, Symbol, t.strAmount, time.Now())
+        _, err = db.Exec(addBuyTrigger, uid, Symbol, t.Amount, time.Now())
         if err != nil{
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
@@ -75,7 +75,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "BUY",
                 StockSymbol     : Symbol,
-                Funds           : t.strAmount,
+                Funds           : t.Amount,
                 FileName        : "",
                 ErrorMessage    : "Unable to Create Buy Trigger",   
             }
@@ -118,7 +118,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "CANCEL_BUY",
                 StockSymbol     : Symbol,
-                Funds           : Amount.String(),
+                Funds           : AmountDec.String(),
                 FileName        : "",
                 ErrorMessage    : "No recent SET_BUY_AMOUNT commands issued",   
             }
@@ -143,7 +143,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Creating Sell Trigger:") 
     type trigger_struct struct{
-        strAmount string
+        Amount string
         Price  string
     }
 
@@ -161,7 +161,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
     }
     fmt.Fprintln(w, UserId)
     fmt.Fprintln(w, Symbol)
-    fmt.Fprintln(w, t.strAmount)
+    fmt.Fprintln(w, t.Amount)
     fmt.Fprintln(w, t.Price)
 
     //Audit UserCommand
@@ -176,7 +176,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 
     db := getDatabasePointerForUser(UserId)
 
-    if(t.strAmount != ""){
+    if(t.Amount != ""){
 	    CommandEvent := UserCommandEvent{
 		EventType       : "UserCommandEvent",
 		Guid            : Guid.String(),
@@ -191,7 +191,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 	    }
 	    SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-        _, err = db.Exec(addSellTrigger, uid, Symbol, t.strAmount, time.Now())
+        _, err = db.Exec(addSellTrigger, uid, Symbol, t.Amount, time.Now())
         if err != nil{
             Error := ErrorEvent{
                 EventType       : "ErrorEvent",
@@ -203,7 +203,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "BUY",
                 StockSymbol     : Symbol,
-                Funds           : t.strAmount,
+                Funds           : t.Amount,
                 FileName        : "",
                 ErrorMessage    : "Unable to Create Buy Trigger",   
             }
@@ -244,7 +244,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
                 Server          : Hostname,
                 Command         : "CANCEL_BUY",
                 StockSymbol     : Symbol,
-                Funds           : t.strAmount,
+                Funds           : t.Amount,
                 FileName        : "",
                 ErrorMessage    : "No recent SET_SELL_AMOUNT commands issued",   
             }
@@ -300,7 +300,7 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
         var id int
         getBuyTriggerIdRows, err := db.Query(getBuyTriggerId, uid, Symbol)
         defer getBuyTriggerIdRows.Close()
-        found := false
+        found = false
         for getBuyTriggerIdRows.Next() {
             found = true
             err = getBuyTriggerIdRows.Scan(&id)
@@ -355,7 +355,7 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
         var id int
         getSellTriggerIdRows, err := db.Query(getSellTriggerId, uid, Symbol)
         defer getSellTriggerIdRows.Close()
-        found := false
+        found = false
         for getSellTriggerIdRows.Next() {
             found = true
             err = getSellTriggerIdRows.Scan(&id)

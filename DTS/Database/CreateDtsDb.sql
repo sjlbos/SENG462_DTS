@@ -739,7 +739,7 @@ $$
 		requested_at,
 		expires_at
 	FROM pending_transactions
-	WHERE uid = _uid AND type = 'purchase'
+	WHERE uid = _uid AND type = 'purchase' AND expires_at::timestamptz > current_timestamp::timestamptz
 	ORDER BY requested_at DESC
 	LIMIT 1;
 $$
@@ -814,7 +814,7 @@ $$
 		requested_at,
 		expires_at
 	FROM pending_transactions
-	WHERE uid = _uid AND type = 'sale'
+	WHERE uid = _uid AND type = 'sale' AND expires_at::timestamptz > current_timestamp::timestamptz
 	ORDER BY requested_at DESC
 	LIMIT 1;
 $$

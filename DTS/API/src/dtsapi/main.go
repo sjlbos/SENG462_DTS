@@ -12,8 +12,6 @@ import (
     "os"
     "runtime/pprof"
     "encoding/json"
-    //"netpool"
-    //"sync"
 )
 
 
@@ -25,8 +23,6 @@ var err error
 var rconn *amqp.Connection
 var ch *amqp.Channel
 var quoteCache net.Conn
-//var QuoteNetpool *netpool.Netpool
-//var NetpoolMutex *sync.Mutex
 
 var getUserId string = "SELECT * FROM \"get_user_account_by_char_id\"($1)"
 var addUser string = "SELECT * FROM \"add_user_account\"($1::varchar, $2::money, $3::timestamptz)"
@@ -96,7 +92,7 @@ func main() {
         
     rabbitConnectionString = "amqp://dts_user:Group1@" + rhost + ":" + rport + "/"
 
-    for i := range dbPointers{
+    for i := range configuration.DBConnectionString{
         var db *sql.DB
         dbPointers = append(dbPointers, db)
         dbinfo := configuration.DBConnectionString[i]

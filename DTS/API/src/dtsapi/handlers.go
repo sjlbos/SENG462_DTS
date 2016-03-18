@@ -11,10 +11,7 @@ import (
 	"strconv"
 	"time"
 	"bytes"
-    "database/sql"
-	//"errors"
-	//_"netpool"
-
+    	"database/sql"
 	"github.com/streadway/amqp"
 	"github.com/nu7hatch/gouuid"
 )
@@ -188,6 +185,11 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	_, err = qconn.Read(reply)
 	reply = bytes.Trim(reply, "\x00")
 	return string(reply)
+}
+
+func writeResponse(w http.ResponseWriter, responseCode int, response string){
+	w.WriteHeader(responseCode)
+	fmt.Fprintln(w, response)
 }
 
 func stripCtlAndExtFromUTF8(str string) string {
