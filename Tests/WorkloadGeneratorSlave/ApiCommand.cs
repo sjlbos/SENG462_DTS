@@ -26,6 +26,7 @@ namespace WorkloadGeneratorSlave
 
                 _request = WebRequest.Create(Uri);
                 _request.Method = Method;
+                _request.Headers["X-TransNo"] = Id;
 
                 if (!String.IsNullOrWhiteSpace(RequestBody))
                 {

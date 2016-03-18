@@ -36,7 +36,7 @@ namespace ServiceHost
             catch (Exception ex)
             {
                 Log.Fatal("The service encountered a fatal error and was unable to start.", ex);
-                throw;
+                Environment.Exit(1);
             }
             Log.Info("Service started successfully.");
         }
@@ -45,7 +45,10 @@ namespace ServiceHost
         {
             Log.Info("Stopping service...");
             _cancellationTokenSource.Cancel();
-            Task.WaitAll(_monitorTask);
+            if (_monitorTask != null)
+            {
+                Task.WaitAll(_monitorTask);   
+            }
         }
 
         private void InitializeAndStartService()

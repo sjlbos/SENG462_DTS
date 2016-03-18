@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using log4net;
 
 namespace TriggerManager.Models
 {
@@ -9,21 +10,23 @@ namespace TriggerManager.Models
     /// </summary>
     public class TriggerController
     {
-        private IDictionary<int, IList<Trigger>> _userToBuyTriggersMap;
-        private IDictionary<int, IList<Trigger>> _userToSellTriggersMap;
+        private static readonly ILog Log = LogManager.GetLogger(typeof (TriggerController));
+
+        private IDictionary<string, IList<Trigger>> _userToBuyTriggersMap;
+        private IDictionary<string, IList<Trigger>> _userToSellTriggersMap;
         private readonly TriggerLogicManager _triggerLogicManager;
-        private readonly string _dtsApiRoot;
+        private readonly ITriggerAuthority _triggerAuthority;
         private readonly object _syncLock;
 
-        public TriggerController(string dtsApiRoot)
+        public TriggerController(ITriggerAuthority triggerAuthority)
         {
-            if (String.IsNullOrWhiteSpace(dtsApiRoot))
-                throw new ArgumentException("Parameter dtsApiRoot is null or whitespace.");
+            if (triggerAuthority == null)
+                throw new ArgumentNullException("triggerAuthority");
 
-            _userToBuyTriggersMap = new Dictionary<int, IList<Trigger>>();
-            _userToSellTriggersMap = new Dictionary<int, IList<Trigger>>();
+            _userToBuyTriggersMap = new Dictionary<string, IList<Trigger>>();
+            _userToSellTriggersMap = new Dictionary<string, IList<Trigger>>();
             _triggerLogicManager = new TriggerLogicManager();
-            _dtsApiRoot = dtsApiRoot;
+            _triggerAuthority = triggerAuthority;
             _syncLock = new object();
         }
 
@@ -43,8 +46,8 @@ namespace TriggerManager.Models
             {
                 // Drop all existing triggers
                 _triggerLogicManager.Reset();
-                _userToBuyTriggersMap = new Dictionary<int, IList<Trigger>>();
-                _userToSellTriggersMap = new Dictionary<int, IList<Trigger>>();
+                _userToBuyTriggersMap = new Dictionary<string, IList<Trigger>>();
+                _userToSellTriggersMap = new Dictionary<string, IList<Trigger>>();
 
                 // Add new triggers
                 foreach (var trigger in triggers)
@@ -68,7 +71,7 @@ namespace TriggerManager.Models
         /// </summary>
         /// <param name="userId">The user ID of the buy triggers' owner.</param>
         /// <param name="triggers">The user's new buy triggers.</param>
-        public void UpdateBuyTriggersForUser(int userId, IList<Trigger> triggers)
+        public void UpdateBuyTriggersForUser(string userId, IList<Trigger> triggers)
         {
             lock (_syncLock)
             {
@@ -89,7 +92,7 @@ namespace TriggerManager.Models
         /// </summary>
         /// <param name="userId">The user ID of the sell triggers' owner.</param>
         /// <param name="triggers">The users's new sell triggers.</param>
-        public void UpdateSellTriggersForUser(int userId, IList<Trigger> triggers)
+        public void UpdateSellTriggersForUser(string userId, IList<Trigger> triggers)
         {
             lock (_syncLock)
             {
@@ -157,7 +160,7 @@ namespace TriggerManager.Models
             _userToSellTriggersMap[trigger.UserId].Add(trigger);
         }
 
-        private void UpdateBuyTriggersForExistingUser(int userId, IList<Trigger> triggers)
+        private void UpdateBuyTriggersForExistingUser(string userId, IList<Trigger> triggers)
         {
             var currentBuyTriggers = _userToBuyTriggersMap[userId];
             foreach (var trigger in currentBuyTriggers)
@@ -174,7 +177,7 @@ namespace TriggerManager.Models
             }
         }
 
-        private void AddBuyTriggersForNewUser(int userId, IList<Trigger> triggers)
+        private void AddBuyTriggersForNewUser(string userId, IList<Trigger> triggers)
         {
             if (triggers == null)
                 return;
@@ -185,7 +188,7 @@ namespace TriggerManager.Models
             }
         }
 
-        private void UpdateSellTriggersForExistingUser(int userId, IList<Trigger> triggers)
+        private void UpdateSellTriggersForExistingUser(string userId, IList<Trigger> triggers)
         {
             var currentSellTriggers = _userToSellTriggersMap[userId];
             foreach (var trigger in currentSellTriggers)
@@ -202,7 +205,7 @@ namespace TriggerManager.Models
             }
         }
 
-        private void AddSellTriggersForNewUser(int userId, IList<Trigger> triggers)
+        private void AddSellTriggersForNewUser(string userId, IList<Trigger> triggers)
         {
             if (triggers == null)
                 return;
@@ -220,13 +223,8 @@ namespace TriggerManager.Models
             foreach (var trigger in sellTriggers)
             {
                 Trigger localTrigger = trigger; // copy to local variable to avoid using iterator variable in lambda 
-                Task.Run(() => FireSellTrigger(localTrigger));
+                Task.Run(() => ExecuteTrigger(localTrigger));
             }
-        }
-
-        private void FireSellTrigger(Trigger trigger)
-        {
-            
         }
 
         private void FireReadyBuyTriggers(IList<Trigger> buyTriggers)
@@ -237,15 +235,21 @@ namespace TriggerManager.Models
             foreach (var trigger in buyTriggers)
             {
                 Trigger localTrigger = trigger; // copy to local variable to avoid using iterator variable in lambda 
-                Task.Run(() => FireBuyTrigger(localTrigger));
+                Task.Run(() => ExecuteTrigger(localTrigger));
             }
         }
 
-        private void FireBuyTrigger(Trigger trigger)
+        private void ExecuteTrigger(Trigger trigger)
         {
-            
+            try
+            {
+                _triggerAuthority.ExecuteTrigger(trigger);
+            }
+            catch (TriggerCommitException ex)
+            {
+                Log.Error(ex);
+            }
         }
-
         #endregion
     }
 }

@@ -24,7 +24,7 @@ namespace TriggerManager
         private readonly ITriggerRepository _repository;
         private readonly TriggerController _controller;
 
-        private readonly IDictionary<int, DateTime> _lastUpdated;
+        private readonly IDictionary<string, DateTime> _lastUpdated;
 
         /// <param name="instanceId">The unique name of the worker instance.</param>
         /// <param name="updateBuffer">The buffer from which to read TriggerUpdateNotification messages.</param>
@@ -45,7 +45,7 @@ namespace TriggerManager
             _updateBuffer = updateBuffer;
             _repository = repository;
             _controller = controller;
-            _lastUpdated = new Dictionary<int, DateTime>();
+            _lastUpdated = new Dictionary<string, DateTime>();
         }
 
         /// <summary>
@@ -115,30 +115,30 @@ namespace TriggerManager
             if (updateNotification.TriggerType == TriggerType.Buy)
             {
                 Log.DebugFormat(CultureInfo.InvariantCulture, "Updating buy triggers for user with Id={0}.", updateNotification.UserId);
-                UpdateBuyTriggersForUser(updateNotification.UserId);
+                UpdateBuyTriggersForUser(updateNotification.UserId, updateNotification.UserDbId);
             }
             else
             {
                 Log.DebugFormat(CultureInfo.InvariantCulture, "Updating sell triggers for user with Id={0}.", updateNotification.UserId);
-                UpdateSellTriggersForUser(updateNotification.UserId);
+                UpdateSellTriggersForUser(updateNotification.UserId, updateNotification.UserDbId);
             }
         }
 
-        private void UpdateBuyTriggersForUser(int userId)
+        private void UpdateBuyTriggersForUser(string userId, int userDbId)
         {
             UpdateLastUpdatedListForUser(userId, DateTime.UtcNow);
-            var buyTriggers = _repository.GetBuyTriggersForUser(userId);
+            var buyTriggers = _repository.GetBuyTriggersForUser(userDbId, userId);
             _controller.UpdateBuyTriggersForUser(userId, buyTriggers);
         }
 
-        private void UpdateSellTriggersForUser(int userId)
+        private void UpdateSellTriggersForUser(string userId, int userDbId)
         {
             UpdateLastUpdatedListForUser(userId, DateTime.UtcNow);
-            var sellTriggers = _repository.GetSellTriggersForUser(userId);
+            var sellTriggers = _repository.GetSellTriggersForUser(userDbId, userId);
             _controller.UpdateSellTriggersForUser(userId, sellTriggers);
         }
 
-        private void UpdateLastUpdatedListForUser(int userId, DateTime dateTime)
+        private void UpdateLastUpdatedListForUser(string userId, DateTime dateTime)
         {
             if (!_lastUpdated.ContainsKey(userId))
             {

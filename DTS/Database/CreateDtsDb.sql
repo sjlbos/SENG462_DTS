@@ -108,7 +108,16 @@ $$
 $$
 LANGUAGE SQL VOLATILE;
 
-
+CREATE OR REPLACE FUNCTION get_user_by_id(_uid int)
+RETURNS TABLE(id int, user_id varchar, balance money) AS
+$$
+	SELECT 	id, 
+			user_id,
+			balance
+	FROM users
+	WHERE id = _uid;
+$$
+LANGUAGE SQL VOLATILE;
 
 CREATE OR REPLACE FUNCTION get_user_account_by_char_id(_user_id varchar)
 RETURNS TABLE(id int, user_id varchar, balance money) AS

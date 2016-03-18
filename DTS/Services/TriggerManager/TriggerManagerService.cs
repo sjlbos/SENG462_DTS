@@ -13,25 +13,33 @@ namespace TriggerManager
     public class TriggerManagerService : WorkerHost
     {
         private string _dtsApiRoot;
-        private string _quoteCacheApiRoot;
+        private string _quoteCacheHost;
+        private int _quoteCachePort;
         private int _quoteCachePollRateMs;
-        private string _triggerRepoConnectionString;
+        private IList<string> _triggerRepoConnectionStrings;
 
         protected override void InitializeService()
         {
             _dtsApiRoot = ConfigurationManager.AppSettings["DtsApiRoot"];
-            _quoteCacheApiRoot = ConfigurationManager.AppSettings["QuoteCacheApiRoot"];
+            
             _quoteCachePollRateMs = Int32.Parse(ConfigurationManager.AppSettings["QuoteCachePollRateMilliseconds"]);
-            _triggerRepoConnectionString = ConfigurationManager.ConnectionStrings["DtsDb"].ConnectionString;
+            _quoteCacheHost = ConfigurationManager.AppSettings["QuoteCacheHost"];
+            _quoteCachePort = Int32.Parse(ConfigurationManager.AppSettings["QuoteCachePort"]);
+
+            _triggerRepoConnectionStrings = new List<string>();
+            foreach (ConnectionStringSettings element in ConfigurationManager.ConnectionStrings)
+            {
+                _triggerRepoConnectionStrings.Add(element.ConnectionString);
+            }
         }
 
         protected override IList<IWorker> GetWorkerList()
         {
             var notificationReceiver = RabbitMessengerFactory.GetReceiver("TriggerNotificationQueueReceiver");
             var sharedBuffer = new BlockingCollection<TriggerUpdateNotification>();
-            var repostiory = new PostgresTriggerRepository(_triggerRepoConnectionString);
-            var quoteProvider = new HttpQuoteProvider(_quoteCacheApiRoot);
-            var controller = new TriggerController(_dtsApiRoot);
+            var repostiory = new PostgresTriggerRepository(_triggerRepoConnectionStrings);
+            var quoteProvider = new SocketQuoteProvider(_quoteCacheHost, _quoteCachePort);
+            var controller = new TriggerController(new DtsApiTriggerAuthority(_dtsApiRoot));
 
             var workerList = new List<IWorker>
             {
