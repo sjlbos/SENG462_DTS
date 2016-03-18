@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.Net;
+using System.Text;
 using log4net;
+using Newtonsoft.Json;
 using TriggerManager.Models;
 
 namespace TriggerManager
@@ -10,8 +12,8 @@ namespace TriggerManager
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof (DtsApiTriggerAuthority));
 
-        private const string CommitBuyTriggerRoute = "/api/users/{0}/buy-triggers/{1}";
-        private const string CommitSellTriggerRoute = "/api/users/{0}/sell-triggers/{1}";
+        private const string CommitBuyTriggerRoute = "/api/users/{0}/buy-triggers/{1}/commit";
+        private const string CommitSellTriggerRoute = "/api/users/{0}/sell-triggers/{1}/commit";
 
         private readonly Uri _dtsApiRoot;
 
@@ -49,8 +51,8 @@ namespace TriggerManager
         private Uri GetRequestUriFromTrigger(Trigger trigger)
         {
             string endpointString = (trigger.Type == TriggerType.Buy)
-                ? String.Format(CultureInfo.InvariantCulture, CommitBuyTriggerRoute, Uri.EscapeDataString(trigger.UserId), trigger.Id)
-                : String.Format(CultureInfo.InvariantCulture, CommitSellTriggerRoute, Uri.EscapeDataString(trigger.UserId), trigger.Id);
+                ? String.Format(CultureInfo.InvariantCulture, CommitBuyTriggerRoute, Uri.EscapeDataString(trigger.UserId), Uri.EscapeDataString(trigger.StockSymbol))
+                : String.Format(CultureInfo.InvariantCulture, CommitSellTriggerRoute, Uri.EscapeDataString(trigger.UserId), Uri.EscapeDataString(trigger.StockSymbol));
             return new Uri(_dtsApiRoot, endpointString);
         }
 
@@ -58,7 +60,23 @@ namespace TriggerManager
         {
             var request = WebRequest.Create(GetRequestUriFromTrigger(trigger));
             request.Method = "POST";
+
+            var body = new RequestBody {TriggerId = trigger.Id};
+            var bodyBytes = Encoding.UTF8.GetBytes(JsonConvert.ToString(body));
+            request.ContentLength = bodyBytes.Length;
+            request.ContentType = "application/json";
+
+            using (var requestStream = request.GetRequestStream())
+            {
+                requestStream.Write(bodyBytes, 0, bodyBytes.Length);
+            }
+
             return request;
+        }
+
+        private class RequestBody
+        {
+            public int TriggerId { get; set; }
         }
     }
 }
