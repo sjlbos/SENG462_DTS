@@ -36,17 +36,20 @@ namespace TriggerManager
 
         protected override void DoWork()
         {
-            Log.Info("Polling latest stock prices...");
-            //foreach (var stock in _controller.StockList)
-            //{
-            //    Log.DebugFormat(CultureInfo.InvariantCulture,
-            //        "Getting quote for stock \"{0}\"...", stock);
-            //    decimal stockPrice = _quoteProvider.GetStockPriceForUser(stock, TriggerManagerUsername);
-            //    Log.DebugFormat("Price for stock \"{0}\" was returned as \"{1}\"", stock, stockPrice.ToString("C"));
+            Log.Debug("Polling latest stock prices...");
+            foreach (var stock in _controller.StockList)
+            {
+                Log.DebugFormat(CultureInfo.InvariantCulture,
+                    "Getting quote for stock \"{0}\"...", stock);
 
-            //    _controller.HandleStockPriceUpdate(stock, stockPrice);
-            //}
-            Log.Info("Stock price polling complete.");
+                decimal stockPrice = _quoteProvider.GetStockPriceForUser(stock, TriggerManagerUsername);
+                
+                Log.DebugFormat(CultureInfo.InvariantCulture,
+                    "Price for stock \"{0}\" was returned as \"{1}\"", stock, stockPrice.ToString("C"));
+
+                _controller.HandleStockPriceUpdate(stock, stockPrice);
+            }
+            Log.Debug("Stock price polling complete.");
         }
     }
 }

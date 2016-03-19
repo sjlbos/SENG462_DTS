@@ -6,8 +6,8 @@ namespace TriggerManager.Repository
 {
     public interface ITriggerRepository
     {
-        IList<Trigger> GetBuyTriggersForUser(int userId);
-        IList<Trigger> GetSellTriggersForUser(int userId);
+        IList<Trigger> GetBuyTriggersForUser(int userDbId, string userId);
+        IList<Trigger> GetSellTriggersForUser(int userDbId, string userId);
         IList<Trigger> GetAllTriggers();
     }
 }

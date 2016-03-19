@@ -313,11 +313,6 @@ namespace TransactionMonitor.Repository
 
         public IEnumerable<TransactionEvent> GetAllLogs(DateTime start, DateTime end)
         {
-            if (start == null)
-                throw new ArgumentNullException("start");
-            if (end == null)
-                throw new ArgumentNullException("end");
-
             using (var command = new NpgsqlCommand("get_all_events"))
             {
                 command.CommandType = System.Data.CommandType.StoredProcedure;
