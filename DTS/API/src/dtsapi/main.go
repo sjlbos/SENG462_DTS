@@ -56,8 +56,8 @@ func main() {
         RabbitHost     string
     	RabbitPort     string
     	HostPort       string
-    	QuoteCacheHost string
-    	QuoteCachePort string
+    	QuoteRunnerHost string
+    	QuoteRunnerPort string
         DBConnectionString []string
     }
     file, err := os.Open("conf.json")

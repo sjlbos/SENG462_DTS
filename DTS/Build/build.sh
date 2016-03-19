@@ -19,6 +19,7 @@ cd $REPO_ROOT/DTS/API/src/dtsapi
 go get
 go install
 mv $REPO_ROOT/DTS/API/bin/dtsapi $REPO_ROOT/bin/DtsApi
+cp $REPO_ROOT/DTS/API/src/dtsapi/conf.json $REPO_ROOT/bin/DtsApi
 rm -rf $REPO_ROOT/DTS/API/bin
 
 # Build QuoteCache
@@ -27,6 +28,7 @@ cd $REPO_ROOT/DTS/QuoteCache/src/quotecache
 go get
 go install
 mv $REPO_ROOT/DTS/QuoteCache/bin/quotecache $REPO_ROOT/bin/QuoteCache
+cp $REPO_ROOT/DTS/QuoteCache/src/quotecache/conf.json $REPO_ROOT/bin/QuoteCache
 rm -rf $REPO_ROOT/DTS/QuoteCache/bin
 
 # Build QuoteRunner
@@ -35,4 +37,5 @@ cd $REPO_ROOT/DTS/QuoteRunner/src/quoterunner
 go get
 go install
 mv $REPO_ROOT/DTS/QuoteRunner/bin/quoterunner $REPO_ROOT/bin/QuoteRunner
+cp $REPO_ROOT/DTS/QuoteRunner/src/quoterunner/conf.json $REPO_ROOT/bin/QuoteRunner
 rm -rf $REPO_ROOT/DTS/QuoteRunner/bin
