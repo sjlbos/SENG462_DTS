@@ -22,7 +22,10 @@ func DumplogUser(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Display Log for User: ")
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := r.Header.Get("TransNo")
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" {
+		TransId = "0"
+	}
     fmt.Fprintln(w, UserId)
 
     //Audit UserCommand
@@ -46,7 +49,10 @@ func DumplogUser(w http.ResponseWriter, r *http.Request){
 
 func Dumplog(w http.ResponseWriter, r *http.Request){
     fmt.Fprintln(w, "Dumplog of all transactions: ")
-    TransId := r.Header.Get("TransNo")
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" {
+		TransId = "0"
+	}
 
     //Audit UserCommand
     Guid := getNewGuid()
@@ -73,7 +79,10 @@ func DisplaySummary(w http.ResponseWriter, r *http.Request){
 
     vars := mux.Vars(r)
     UserId := vars["id"]
-    TransId := r.Header.Get("TransNo")
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" {
+		TransId = "0"
+	}
 
     //Audit UserCommand
     Guid := getNewGuid()
