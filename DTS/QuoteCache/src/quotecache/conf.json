@@ -1,3 +1,7 @@
 {
-	"HostPort"	:	44410
+	"RabbitHost"     : "B134.seng.uvic.ca",
+	"RabbitPort"     : "44410",
+	"HostPort"       : "44410",
+	"QuotePort"      : "4443",
+	"NumThreads"	 : "4",
 }
