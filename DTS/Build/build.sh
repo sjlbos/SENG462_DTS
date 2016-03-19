@@ -13,9 +13,6 @@ cd $REPO_ROOT
 DTS/Build/NuGet/NuGet.exe restore DTS/Services/DTSServices.sln
 xbuild /p:Configuration=Release DTS/Services/DTSServices.sln
 
-# Set temporary GOPATH
-GOPATH="$REPO_ROOT/DTS/API:$REPO_ROOT/DTS/QuoteCache"
-
 # Build API 
 export GOPATH="$REPO_ROOT/DTS/API"
 cd $REPO_ROOT/DTS/API/src/dtsapi
@@ -31,3 +28,11 @@ go get
 go install
 mv $REPO_ROOT/DTS/QuoteCache/bin/quotecache $REPO_ROOT/bin/QuoteCache
 rm -rf $REPO_ROOT/DTS/QuoteCache/bin
+
+# Build QuoteRunner
+export GOPATH="$REPO_ROOT/DTS/QuoteRunner"
+cd $REPO_ROOT/DTS/QuoteRunner/src/quoterunner
+go get
+go install
+mv $REPO_ROOT/DTS/QuoteRunner/bin/quoterunner $REPO_ROOT/bin/QuoteRunner
+rm -rf $REPO_ROOT/DTS/QuoteRunner/bin
