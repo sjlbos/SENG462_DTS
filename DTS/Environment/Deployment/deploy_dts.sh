@@ -77,6 +77,7 @@ function deployZipFile {
 	ssh $SSH_PATH <<EOF
 	unzip -o $DEPLOYMENT_DIR/$FILE_NAME -d $DEPLOYMENT_DIR
 	rm -f $DEPLOYMENT_DIR/$FILE_NAME
+	chmod 770 -R $DEPLOYMENT_DIR/${FILE_NAME%.*}
 EOF
 }
 
