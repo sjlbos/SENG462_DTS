@@ -70,7 +70,7 @@ function deployZipFile {
 	ssh $SSH_PATH "mkdir -p $DEPLOYMENT_DIR"
 	scp $FILE_DIR/$FILE_NAME $SSH_PATH:$DEPLOYMENT_DIR
 	ssh $SSH_PATH <<EOF
-	unzip $DEPLOYMENT_DIR/$FILE_NAME -d $DEPLOYMENT_DIR
+	unzip -o $DEPLOYMENT_DIR/$FILE_NAME -d $DEPLOYMENT_DIR
 	rm -f $DEPLOYMENT_DIR/$FILE_NAME
 EOF
 }
@@ -92,12 +92,16 @@ echo "Build complete."
 
 # Package Binaries
 echo "Creating DTS packages..."
-mkdir -p $PACKAGE_DIR
-zip -r $PACKAGE_DIR/TransactionMonitor.zip $BUILD_DIR/TransactionMonitor
-zip -r $PACKAGE_DIR/TriggerManager.zip $BUILD_DIR/TriggerManager
-zip -r $PACKAGE_DIR/WorkloadGeneratorSlave.zip $BUILD_DIR/WorkloadGeneratorSlave
-zip -r $PACKAGE_DIR/DtsApi.zip $BUILD_DIR/DtsApi
-zip -r $PACKAGE_DIR/QuoteCache.zip $BUILD_DIR/QuoteCache
+
+rm -rf $PACKAGE_DIR
+mkdir $PACKAGE_DIR
+
+cd $BUILD_DIR
+zip -r $PACKAGE_DIR/TransactionMonitor.zip TransactionMonitor
+zip -r $PACKAGE_DIR/TriggerManager.zip TriggerManager
+zip -r $PACKAGE_DIR/WorkloadGeneratorSlave.zip WorkloadGeneratorSlave
+zip -r $PACKAGE_DIR/DtsApi.zip DtsApi
+zip -r $PACKAGE_DIR/QuoteCache.zip QuoteCache
 echo "Package creation complete."
 
 # Deploy Transaction Monitors
