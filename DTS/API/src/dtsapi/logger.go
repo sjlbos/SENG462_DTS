@@ -14,10 +14,10 @@ func Logger(inner http.Handler, name string) http.Handler {
         inner.ServeHTTP(w, r)
 
         log.Printf(
-            "%s\t%s\t%s",
-            r.Header.Get("TransNo"),
-            name,
-            time.Since(start),
+		"%10s\t%s\t%s",
+		r.Header.Get("X-TransNo"),
+		name,
+		time.Since(start),
         )
     })
 }

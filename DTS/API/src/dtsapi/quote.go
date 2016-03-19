@@ -1,28 +1,21 @@
 package main
 
 import (
-//    "encoding/json"
     "fmt"
-//    "net"
     "net/http"
-//   "os"
-//    "log"
-//    "strings"
-//    "strconv"
     "time"
-//    "io/ioutil"
-
     "github.com/gorilla/mux"
     "github.com/shopspring/decimal"
-//    "github.com/streadway/amqp"
-//    "github.com/nu7hatch/gouuid"
 )
 
 func Quote(w http.ResponseWriter, r *http.Request){
 	vars := mux.Vars(r)
 	StockId := vars["symbol"]
 	UserId := vars["id"]
-	TransId := r.Header.Get("TransNo")
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" {
+		TransId = "0"
+	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -69,6 +62,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
 	price, err := decimal.NewFromString(strPrice)
 	if err != nil{
 		//error
+		return
 	}
 	var Output string = "The Quote For UserId " + UserId + " and StockId " + StockId + " returned " + price.String()
 	fmt.Fprintln(w, Output)

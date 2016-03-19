@@ -152,10 +152,10 @@ func Sell(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-
 	toSell := (AmountDec.Div(quotePrice)).Floor()
+
 	_,err = db.Exec(addPendingSale, id, t.Symbol, toSell.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
-	if(err != nil){
+	if err != nil {
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",
 			Guid            : Guid.String(),
@@ -173,10 +173,10 @@ func Sell(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType)
 		//error
 		return
-	}else{
-		//success
-		return
-	}      
+	}
+	//success
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
+	return    
 }
 
 
@@ -190,10 +190,6 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 
 	//get a db pointer
 	db := getDatabasePointerForUser(UserId)
-	if err != nil{
-		//error
-		return
-	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -246,7 +242,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 		found = true
 		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
 	} 
-	if(found == false){
+	if !found {
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",
 			Guid            : Guid.String(),
@@ -264,6 +260,16 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType) 
 		//error
 		return                 
+	}
+	if expires_at.Before(time.Now()){
+		//success (Kinda)
+		writeResponse(w, http.StatusBadRequest, "Sale Request has Timed Out")
+		_, err = db.Exec(cancelTransaction, id)
+		if err != nil{
+			//error
+			return
+		}
+		return
 	}
 	_, err = db.Exec(commitSale, id, time.Now())
 	if(err != nil){
@@ -284,10 +290,10 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType)  
 		//error
 		return
-	}else{
-		//success
-		return
-	} 
+	}
+	//success
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Commited")
+	return
 }
 
 func CancelSell(w http.ResponseWriter, r *http.Request){
@@ -300,10 +306,6 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 
 	//get DB Pointer
 	db := getDatabasePointerForUser(UserId)
-	if err != nil{
-		//error
-		return
-	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -383,8 +385,8 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 	if err != nil{
 		//error
 		return
-	}else{
-		//success
-		return
 	}
+	//success
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Cancelled")
+	return
 }

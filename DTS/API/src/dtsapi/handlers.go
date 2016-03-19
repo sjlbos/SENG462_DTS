@@ -168,7 +168,7 @@ type TriggerEvent struct{
 }*/
 
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
-	strEcho :=  TransId + "," + getNew + "," + UserId + "," + StockId + "," + guid + "\n"
+	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
 	var qconn net.Conn
 	for qconn == nil {
 		addr, _ := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
@@ -215,7 +215,6 @@ func failOnError(err error, msg string) {
 func getNewGuid() (uuid.UUID){
     guid,err := uuid.NewV4()
     if err != nil{
-
     }
     return *guid
 }

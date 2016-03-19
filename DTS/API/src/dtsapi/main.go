@@ -43,6 +43,10 @@ var cancelSellTrigger string = "SELECT * FROM \"cancel_sell_trigger\"($1::int)"
 var getBuyTriggerId string = "SELECT * FROM \"get_buy_trigger_id_for_user_and_stock\"($1::int, $2::varchar)"
 var getSellTriggerId string = "SELECT * FROM \"get_sell_trigger_id_for_user_and_stock\"($1::int, $2::varchar)"
 var getPendingTriggerId string = "SELECT * FROM \"get_pending_trigger_id_for_user_and_stock\"($1::int, $2::varchar, $3::trigger_type)"
+var getTriggerById string = "SELECT * FROM \"get_trigger_by_id\"($1)"
+var performBuyTrigger string = "SELECT * FROM \"perform_buy_trigger\"($1, $2::money)"
+var performSellTrigger string = "SELECT * FROM \"perform_sell_trigger\"($1, $2::money)"
+
 
 var Hostname string
 

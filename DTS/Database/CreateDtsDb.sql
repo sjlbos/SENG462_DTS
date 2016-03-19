@@ -127,7 +127,7 @@ CREATE OR REPLACE FUNCTION get_user_portfolio(_uid int)
 RETURNS TABLE(stock varchar, num_shares int) AS
 $$
 	SELECT 	stock,
-			num_shares
+	num_shares
 	FROM portfolios
 	WHERE uid = _uid;
 $$
@@ -273,12 +273,12 @@ LANGUAGE SQL VOLATILE;
 
 CREATE OR REPLACE FUNCTION get_trigger_by_id(_id int)
 RETURNS TABLE (	id int, 
-				uid int,
-				stock varchar, 
-				type trigger_type, 
-				trigger_price money, 
-				num_shares int, 
-				created_at timestamptz) AS
+		uid int,
+		stock varchar, 
+		type trigger_type, 
+		trigger_price money, 
+		num_shares int, 
+		created_at timestamptz) AS
 $$
 	SELECT 	id,
 			uid,
@@ -560,6 +560,8 @@ BEGIN
 
 	_num_shares = moneySaved / _stock_price;
 
+	UPDATE portfolios SET num_shares = numshares - _num_shares;
+
 	INSERT INTO triggers(
 				uid, 
 				stock, 
@@ -577,8 +579,6 @@ BEGIN
 		FROM pending_triggers
 		WHERE id = _id)
 		RETURNING stock INTO _stock;
-
-	UPDATE portfolios SET num_shares = num_shares - _num_shares WHERE uid = _uid and stock = _stock;
 
 	DELETE FROM pending_triggers WHERE id = _id RETURNING id INTO _transaction_id;
 
@@ -618,19 +618,23 @@ RETURNS void AS
 $$
 DECLARE
 	_num_shares int;
-	_user_id int;
+	_uid int;
+	_existing_shares int;
 	_stock varchar;
 BEGIN
 
-	SELECT num_shares, uid, stock INTO _num_shares, _user_id, _stock
+	SELECT num_shares, uid, stock INTO _num_shares, _uid, _stock
 	FROM triggers
 	WHERE id = _id;
 
-	INSERT INTO portfolios AS p (uid, stock, num_shares)
-	VALUES (_user_id, _stock, _num_shares)
-	ON CONFLICT (uid, stock)
-	DO UPDATE SET num_shares = p.num_shares + _num_shares
-	WHERE p.uid = _user_id and p.stock = _stock; 
+	_existing_shares = get_user_stock_amount(_uid, _stock);
+
+	IF _existing_shares IS NULL THEN
+		INSERT INTO portfolios (uid, stock, num_shares)
+			VALUES (_uid, _stock, _num_shares);
+	ELSE
+		UPDATE portfolios SET num_shares = (_num_shares + _existing_shares) WHERE uid = _uid AND stock = _stock;
+	END IF;
 
 	DELETE FROM triggers 
 	WHERE id = _id;
@@ -639,6 +643,59 @@ $$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+
+CREATE OR REPLACE FUNCTION perform_sell_trigger(
+	_id int,
+	_quote_price money
+)
+RETURNS void AS
+$$
+DECLARE
+	_num_shares int;
+	_uid int;
+	_sale_value money;
+BEGIN
+	SELECT num_shares,uid INTO _num_shares,_uid
+	FROM triggers 
+	WHERE id = _id;
+
+	_sale_value = _num_shares * _quote_price;
+
+	UPDATE users SET balance = balance + _sale_value WHERE id = _uid;
+
+	DELETE FROM triggers WHERE id = _id;
+END;
+$$
+LANGUAGE 'plpgsql' VOLATILE;
+
+CREATE OR REPLACE FUNCTION perform_buy_trigger(
+	_id int,
+	_quote_price money
+)
+RETURNS void AS
+$$
+DECLARE
+	_num_shares int;
+	_stock varchar;
+	_uid int;
+	_sale_value money;
+BEGIN
+	SELECT num_shares,uid,stock INTO _num_shares,_uid,_stock
+	FROM triggers 
+	WHERE id = _id;
+
+	INSERT INTO portfolios AS p (uid, stock, num_shares)
+	VALUES (_uid, _stock, _num_shares)
+	ON CONFLICT (uid, stock)
+	DO UPDATE SET num_shares = p.num_shares + _num_shares
+	WHERE p.uid = _uid and p.stock = _stock; 
+
+	DELETE FROM triggers WHERE id = _id;
+END;
+$$
+LANGUAGE 'plpgsql' VOLATILE;
+
+	
 
 CREATE OR REPLACE FUNCTION get_user_transaction_history(
 	_uid int
@@ -739,7 +796,7 @@ $$
 		requested_at,
 		expires_at
 	FROM pending_transactions
-	WHERE uid = _uid AND type = 'purchase' AND expires_at::timestamptz > current_timestamp::timestamptz
+	WHERE uid = _uid AND type = 'purchase'
 	ORDER BY requested_at DESC
 	LIMIT 1;
 $$
@@ -814,7 +871,7 @@ $$
 		requested_at,
 		expires_at
 	FROM pending_transactions
-	WHERE uid = _uid AND type = 'sale' AND expires_at::timestamptz > current_timestamp::timestamptz
+	WHERE uid = _uid AND type = 'sale'
 	ORDER BY requested_at DESC
 	LIMIT 1;
 $$

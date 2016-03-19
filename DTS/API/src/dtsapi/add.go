@@ -11,13 +11,16 @@ import (
 
 func Add(w http.ResponseWriter, r *http.Request){
 	zero,_ := decimal.NewFromString("0");
-	//fmt.Fprintln(w, "Adding Funds to account:")
+
 	type add_struct struct {
 		Amount string
 	}
 	vars := mux.Vars(r)
 	UserId := vars["id"]
-	TransId := r.Header.Get("TransNo")
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" { 
+		TransId = "0"
+	}
 	decoder := json.NewDecoder(r.Body)
 	var t add_struct   
 	err := decoder.Decode(&t)
@@ -111,10 +114,10 @@ func Add(w http.ResponseWriter, r *http.Request){
 			SendRabbitMessage(Error,Error.EventType)
 			writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
 			return
-		}else{
-			writeResponse(w, http.StatusCreated, "Account Created with Funds")
-			return
 		}
+		//success
+		writeResponse(w, http.StatusOK, "Account Created with Funds")
+		return
 	}
 
 	//User Account Exists, Add Funds
@@ -153,8 +156,8 @@ func Add(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusInternalServerError, "Failed To Add funds to Account")
 		return
-	}else{
-		writeResponse(w, http.StatusOK, "Funds Have been Added to Account")
-		return
 	}
+	//success
+	writeResponse(w, http.StatusOK, "Funds Have been Added to Account")
+	return
 }

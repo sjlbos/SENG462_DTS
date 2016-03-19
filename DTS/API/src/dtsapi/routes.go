@@ -59,7 +59,7 @@ var routes = Routes{
     	"CommitSell",
     	"POST",
     	"/api/users/{id}/pending-sales/commit",
-	   CommitSell,
+	CommitSell,
     },
     Route{
     	"CancelSell",
@@ -83,13 +83,25 @@ var routes = Routes{
     	"CancelBuyTrigger",
     	"DELETE",
     	"/api/users/{id}/buy-triggers/{symbol}",
-    	CreateBuyTrigger,
+    	CancelBuyTrigger,
     },
     Route{
     	"CancelSellTrigger",
     	"DELETE",
     	"/api/users/{id}/sell-triggers/{symbol}",
-    	CreateSellTrigger,
+    	CancelSellTrigger,
+    },
+    Route{
+    	"PerformBuyTrigger",
+    	"POST",
+    	"/api/users/{id}/buy-triggers/{symbol}/commit",
+    	PerformBuyTrigger,
+    },
+    Route{
+    	"PerformSellTrigger",
+    	"POST",
+    	"/api/users/{id}/sell-triggers/{symbol}/commit",
+    	PerformSellTrigger,
     },
     Route{
     	"DumplogUser",

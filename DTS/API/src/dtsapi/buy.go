@@ -40,7 +40,6 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		Funds           : t.Amount,
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-
 	if err != nil {
 		//error decoding
 		return
@@ -51,6 +50,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
 	if err != nil{
 		return
 	}
+
 	if(AmountDec.Cmp(zero) != 1){
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",
@@ -99,7 +99,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
 	strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
-	if err != nil || quotePrice == decimal.NewFromFloat(0){
+	if err != nil {
 		writeResponse(w, http.StatusInternalServerError, "Quote Return is not Valid")
 		return;
 	}
@@ -117,10 +117,10 @@ func Buy(w http.ResponseWriter, r *http.Request){
 			Funds           : t.Amount,
 			FileName        : "",
 			ErrorMessage    : "Quote is not greater than 0",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
-	    return
+		}
+		SendRabbitMessage(Error,Error.EventType)
+		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+		return
 	}
 	//Check If User Exists
 	id, found, _ := getDatabaseUserId(UserId) 
@@ -186,10 +186,10 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusInternalServerError, "Failed to Create Purchase")
 	    	return
-	}else{
-		writeResponse(w, http.StatusOK, "Purchase Request has been Created")
-		return
 	}
+	//success
+	writeResponse(w, http.StatusOK, "Purchase Request has been Created")
+	return
 }
 
 func CommitBuy(w http.ResponseWriter, r *http.Request){
@@ -201,10 +201,6 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 	}
 
 	db := getDatabasePointerForUser(UserId)
-	if err != nil{
-		//error
-		return
-	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -241,15 +237,18 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(Error,Error.EventType) 
 		//error
+		writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 		return       
 	}
 
 	LatestPendingrows, err := db.Query(getLatestPendingPurchase, uid)
-	defer LatestPendingrows.Close()
-	if err !=nil{
+	if err != nil{
 		//error
+		writeResponse(w, http.StatusBadRequest, "No Recent BUY Commands to Commit")
 		return
 	}
+	defer LatestPendingrows.Close()
+
 	var id int
 	var stock string
 	var num_shares int
@@ -280,8 +279,18 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		//error
 		return                  
 	}
+	if expires_at.Before(time.Now()){
+		//success (Kinda)
+		writeResponse(w, http.StatusBadRequest, "Purchase Request has Timed Out")
+		_, err = db.Exec(cancelTransaction, id)
+		if err != nil{
+			//error
+			return
+		}
+		return
+	}
 	_, err = db.Exec(commitPurchase, id, time.Now())
-	if(err != nil){
+	if err != nil {
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",
 			Guid            : Guid.String(),
@@ -299,22 +308,20 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(Error,Error.EventType)
 		//error
 		return
-	}else{
-		//success
-		return
 	}
+	//success
+	writeResponse(w, http.StatusOK, "Purchase Request has been Commited")
+	return
 }
 
 func CancelBuy(w http.ResponseWriter, r *http.Request){
 	vars := mux.Vars(r)
 	UserId := vars["id"]
-	TransId := r.Header.Get("TransNo")
-
-	db := getDatabasePointerForUser(UserId)
-	if err != nil{
-		//error
-		return
+	TransId := r.Header.Get("X-TransNo")
+	if TransId == "" {
+		TransId = "0"
 	}
+	db := getDatabasePointerForUser(UserId)
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -351,6 +358,7 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(Error,Error.EventType)    
 		//error
+		writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 		return    
 	}
 
@@ -390,15 +398,16 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(Error,Error.EventType)       
 		//error
+		writeResponse(w, http.StatusBadRequest, "No Recent BUY commands to be Cancelled")
 		return           
 	}
 
 	_, err = db.Exec(cancelTransaction, id)
 	if err != nil {
 		//error
+		writeResponse(w, http.StatusInternalServerError, "Failed To Cancel Transaction")
 		return
-	}else{
-		//success
-		return
-	}   
+	}	
+	writeResponse(w, http.StatusOK, "Purchase Request has been Cancelled")
+	return 
 }

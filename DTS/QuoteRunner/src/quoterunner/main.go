@@ -7,8 +7,8 @@ import(
 	"sync"
 	"github.com/shopspring/decimal"
 	"github.com/streadway/amqp"
+	"github.com/nu7hatch/gouuid"
 	"fmt"
-	//"flag"
 	"os"
 	"log"
 	"encoding/json"
@@ -115,6 +115,13 @@ func failOnError(err error, msg string) {
     }
 }
 
+func getNewGuid() (uuid.UUID){
+    guid,err := uuid.NewV4()
+    if err != nil{
+    }
+    return *guid
+}
+
 func SendRabbitMessage(message interface{}, EventType string){
     q := message
 
@@ -173,13 +180,18 @@ func handleConnection(conn net.Conn){
 
 	var price decimal.Decimal
 
-	TransId 		:= inputs[0]
-	getNew, err 	:= strconv.ParseBool(inputs[1])
-	APIUserId	    := inputs[2]
-	stockSymbol 	:= inputs[3]
-	Guid			:= inputs[4]
+	getNew, err 	:= strconv.ParseBool(strings.ToLower(inputs[0]))
+	APIUserId	:= inputs[1]
+	stockSymbol 	:= inputs[2]
+	TransId := "1"
+	GGuid := getNewGuid()
+	Guid := GGuid.String()
+	if len(inputs) > 3 {
+		TransId 	= inputs[3]
+		Guid		= inputs[4]
+	}
 
-	if !getNew | getNew {
+	if !getNew || getNew {
 		var requestString string = "GET," + stockSymbol
 		fmt.Fprintf(CacheConn, requestString)
 		cacheStatus := make([]byte, 100)
