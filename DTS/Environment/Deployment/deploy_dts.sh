@@ -55,6 +55,8 @@ DTS_DB_PORT="44410"
 AUDIT_DB_SERVER="b132"
 AUDIT_DB_PORT="44410"
 
+WLG_SLAVE_SERVERS=("b138" "b139" "b140" "b141")
+
 # Local Paths
 PACKAGE_DIR=$REPO_ROOT/packages
 BUILD_DIR=$REPO_ROOT/bin
@@ -145,4 +147,11 @@ for host in "${WEB_SERVERS[@]}"
 do
 	echo "Deploying web server to $host."
 	#deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR {Package Name Here!}
+done
+
+# Deploy WLG Slaves
+for host in "${WLG_SLAVE_SERVERS[@]}"
+do
+	echo "Deploying WLG slave to $host."
+	deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR WorkloadGeneratorSlave.zip
 done
