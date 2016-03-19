@@ -49,7 +49,7 @@ TRANSACTION_MONITOR_PORT="44410"
 
 TRIGGER_MANAGER_SERVER="b135"
 
-DTS_DB_SERVER="b133"
+DTS_DB_SERVERS=("b133" "b142" "b144")
 DTS_DB_PORT="44410"
 
 AUDIT_DB_SERVER="b132"
@@ -80,13 +80,16 @@ EOF
 
 ##########################################################################################
 
-# Deploy DTS Database
-echo "Deploying DTS Database"
-$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh "$USER $DTS_DB_SERVER$HOST_SUFFIX" dts $DTS_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsDb.sql
+# Deploy DTS Databases
+for host in "${DTS_DB_SERVERS[@]}" 
+do
+	echo "Deploying DTS Database to $host."
+	$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh $USER $host$HOST_SUFFIX dts $DTS_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsDb.sql
+done
 
 # Deploy Audit Database
 echo "Deploying DTS Audit Database"
-$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh "$USER $AUDIT_DB_SERVER$HOST_SUFFIX" dts_audit $AUDIT_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsAuditDb.sql
+$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh $USER $AUDIT_DB_SERVER$HOST_SUFFIX dts_audit $AUDIT_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsAuditDb.sql
 
 # Build DTS
 echo "Building DTS binaries..."

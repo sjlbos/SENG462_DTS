@@ -67,10 +67,10 @@ scp $CREATE_SCRIPT_DIR/$CREATE_SCRIPT_NAME $SSH_PATH:$CREATE_SCRIPT_REMOTE_DIR
 
 # Peform database deployment
 ssh $SSH_PATH <<EOF
-	dropdb -p $DB_PORT $DB_NAME
+	dropdb -p $DB_PORT -U dts_user $DB_NAME
 	pg_ctl stop -w -D $DATA_DIR
 	pg_ctl start -w -D $DATA_DIR -l $DATA_DIR/logfile.txt
-	createdb -p $DB_PORT $DB_NAME
+	createdb -p $DB_PORT -U dts_user $DB_NAME
 	psql -d $DB_NAME -p $DB_PORT -U dts_user -f $CREATE_SCRIPT_REMOTE_PATH
 	rm -rf CREATE_SCRIPT_REMOTE_DIR
 EOF
