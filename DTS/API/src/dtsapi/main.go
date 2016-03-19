@@ -71,8 +71,8 @@ func main() {
         fmt.Println("error:", err)
     }
 
-    var qhost string = configuration.QuoteCacheHost
-    var qport string = configuration.QuoteCachePort
+    var qhost string = configuration.QuoteRunnerHost
+    var qport string = configuration.QuoteRunnerPort
     var rhost string = configuration.RabbitHost
     var rport string = configuration.RabbitPort
     var port string = configuration.HostPort
