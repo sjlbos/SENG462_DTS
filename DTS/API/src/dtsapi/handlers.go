@@ -171,14 +171,19 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
 	var qconn net.Conn
 	for qconn == nil {
-		addr, _ := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
-		qconn, _ = net.DialTCP("tcp", nil, addr)
+		addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
+		qconn, err = net.DialTCP("tcp", nil, addr)
+	}
+	if err != nil {
+		//error
+		println("Error Connecting to Quote Cache")
+		return "-1"
 	}
 	
 	_, err = qconn.Write([]byte(strEcho))
 	if err != nil {
-	println("Write to server failed:", err.Error())
-	os.Exit(1)
+		println("Write to server failed:", err.Error())
+		os.Exit(1)
 	}
 
 	reply := make([]byte, 100)

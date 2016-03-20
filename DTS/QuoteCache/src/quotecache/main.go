@@ -204,9 +204,14 @@ func handleConnection(conn net.Conn){
 		for tmp_num_threads > 0 {
 			go func() {
 				sendString := stockSymbol + "," + APIUserId + "\n"
-				qconn, err := net.Dial("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
+				var qconn net.Conn
+				for qconn == nil {
+					addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
+					qconn, err = net.DialTCP("tcp", nil, addr)
+				}
 				if err != nil {
 					//error
+					_, err = conn.Write([]byte("-1"))
 				}
 				_, err =fmt.Fprintf(qconn, sendString)
 				if err!= nil {
