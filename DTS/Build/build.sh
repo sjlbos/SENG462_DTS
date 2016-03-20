@@ -36,13 +36,3 @@ go install
 mv $REPO_ROOT/DTS/QuoteCache/bin/quotecache $REPO_ROOT/bin/QuoteCache/QuoteCache
 cp $REPO_ROOT/DTS/QuoteCache/src/quotecache/conf.json $REPO_ROOT/bin/QuoteCache
 rm -rf $REPO_ROOT/DTS/QuoteCache/bin
-
-# Build QuoteRunner
-export GOPATH="$REPO_ROOT/DTS/QuoteRunner"
-mkdir $REPO_ROOT/bin/QuoteRunner
-cd $REPO_ROOT/DTS/QuoteRunner/src/quoterunner
-go get
-go install
-mv $REPO_ROOT/DTS/QuoteRunner/bin/quoterunner $REPO_ROOT/bin/QuoteRunner/QuoteRunner
-cp $REPO_ROOT/DTS/QuoteRunner/src/quoterunner/conf.json $REPO_ROOT/bin/QuoteRunner
-rm -rf $REPO_ROOT/DTS/QuoteRunner/bin
