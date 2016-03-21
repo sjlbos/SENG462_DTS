@@ -10,6 +10,7 @@ import (
 )
 
 func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Creating Buy Trigger");
 	type trigger_struct struct{
 		Amount string
 		Price  string
@@ -76,7 +77,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 
-		AmountDec, err := decimal.NewFromString(t.Amount)
+		_, err := decimal.NewFromString(t.Amount)
 		if err != nil{
 			//error
 			return
@@ -189,6 +190,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 }
 
 func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Creating Sell Trigger");
 	type trigger_struct struct{
 		Amount string
 		Price  string
@@ -256,7 +258,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 
-		AmountDec, err := decimal.NewFromString(t.Amount)
+		_, err := decimal.NewFromString(t.Amount)
 		if err != nil{
 			//error
 			return
@@ -311,7 +313,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 
-		AmountDec, err := decimal.NewFromString(t.Price)
+		_, err := decimal.NewFromString(t.Price)
 		if err != nil{
 			//error
 			return
@@ -368,6 +370,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 }
 
 func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Cancelling Buy Trigger");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	Symbol := vars["symbol"]    
@@ -431,6 +434,7 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 }
 
 func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Cancelling Sell Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	Symbol := vars["symbol"]
@@ -593,8 +597,7 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 	if err != nil{
 		//error
 		return
-	}
-	
+	}	
 }
 
 func PerformBuyTrigger(w http.ResponseWriter, r *http.Request){

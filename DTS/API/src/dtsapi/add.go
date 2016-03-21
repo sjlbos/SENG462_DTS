@@ -7,9 +7,11 @@ import (
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
+	"fmt"
 )
 
 func Add(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Adding Funds Too Account");
 	zero,_ := decimal.NewFromString("0");
 
 	type add_struct struct {

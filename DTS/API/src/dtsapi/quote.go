@@ -9,6 +9,7 @@ import (
 )
 
 func Quote(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintf(w, "Getting Quote");
 	vars := mux.Vars(r)
 	StockId := vars["symbol"]
 	UserId := vars["id"]
@@ -66,5 +67,4 @@ func Quote(w http.ResponseWriter, r *http.Request){
 	}
 	var Output string = "The Quote For UserId " + UserId + " and StockId " + StockId + " returned " + price.String()
 	fmt.Fprintln(w, Output)
-
 }

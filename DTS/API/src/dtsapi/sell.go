@@ -11,6 +11,7 @@ import (
 
 
 func Sell(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Creating Sell Request");
 	zero,_ := decimal.NewFromString("0");
 	type sell_struct struct {
 		Amount string
@@ -179,8 +180,8 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	return    
 }
 
-
 func CommitSell(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Commiting Sell Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	TransId := r.Header.Get("X-TransNo")
@@ -297,6 +298,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 }
 
 func CancelSell(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Cancelling Sell Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	TransId := r.Header.Get("X-TransNo")

@@ -122,7 +122,7 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
 	var qconn net.Conn
 	for qconn == nil {
-		addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
+		addr, _ := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
 		qconn, err = net.DialTCP("tcp", nil, addr)
 	}
 	if err != nil {

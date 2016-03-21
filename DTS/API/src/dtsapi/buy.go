@@ -9,6 +9,7 @@ import (
 )
 
 func Buy(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Buying Stock");
 	zero,_ := decimal.NewFromString("0");
 	type buy_struct struct {
 		Amount string
@@ -193,6 +194,7 @@ func Buy(w http.ResponseWriter, r *http.Request){
 }
 
 func CommitBuy(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Commiting Buy Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	TransId := r.Header.Get("X-TransNo")
@@ -315,6 +317,7 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 }
 
 func CancelBuy(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Cancelling Buy Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	TransId := r.Header.Get("X-TransNo")

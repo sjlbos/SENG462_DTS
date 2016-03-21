@@ -145,6 +145,4 @@ func main() {
 
     RouterPort := ":" + port
     log.Fatal(http.ListenAndServe(RouterPort, router))
-
-
 }
