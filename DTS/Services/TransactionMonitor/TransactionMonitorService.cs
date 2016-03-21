@@ -14,35 +14,28 @@ namespace TransactionMonitor
 {
     public class TransactionMonitorService : WorkerHost
     {
-        private int _queueReaderCount;
-        private int _dbWriterCount;
+        private int _workerCount;
         private string _dbConnectionString;
         private Uri _apiEndpoint;
 
         protected override void InitializeService()
         {
-            _queueReaderCount = Int32.Parse(ConfigurationManager.AppSettings["NumberOfQueueReaders"]);
-            _dbWriterCount = Int32.Parse(ConfigurationManager.AppSettings["NumberOfDbWriters"]);
+            _workerCount = Int32.Parse(ConfigurationManager.AppSettings["WorkerCount"]);
             _apiEndpoint = new Uri(ConfigurationManager.AppSettings["ApiRoot"]);
             _dbConnectionString = ConfigurationManager.ConnectionStrings["DtsAuditDb"].ConnectionString;
         }
 
         protected override IList<IWorker> GetWorkerList()
         {
-            var sharedBuffer = new BlockingCollection<TransactionEvent>();
+     
             var workerList = new List<IWorker>();
             var repository = new PostgresAuditRepository(_dbConnectionString);
 
-            for (int i = 0; i < _queueReaderCount; i++)
+            for (int i = 0; i < _workerCount; i++)
             {
                 var receiver = RabbitMessengerFactory.GetReceiver("TransactionEventQueueReceiver");
-                workerList.Add(new TransactionQueueMonitorWorker(String.Format(CultureInfo.InvariantCulture,
-                    "Queue Monitor {0}", i), receiver, sharedBuffer));
-            }
-            for (int i = 0; i < _dbWriterCount; i++)
-            {
-                workerList.Add(new EventWriterWorker(String.Format(CultureInfo.InvariantCulture,
-                    "Event Writer {0}", i), repository, sharedBuffer));
+                workerList.Add(new TransactionMonitorWorker(String.Format(CultureInfo.InvariantCulture,
+                    "Worker {0}", i), receiver, repository));
             }
 
             workerList.Add(new NancyHostLauncherWorker("Nancy Launcher", _apiEndpoint, repository));
