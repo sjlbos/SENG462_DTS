@@ -72,7 +72,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+	    //writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 	    return
 	}
 
@@ -94,7 +94,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 		ErrorMessage    : "Symbol is Not Valid",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
+	    //writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 	    return
 	}
 
@@ -127,7 +127,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+	    //writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 	    return
 	}
 	
@@ -176,7 +176,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	//success
-	writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
+	//writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
 	return    
 }
 
@@ -264,7 +264,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 	}
 	if expires_at.Before(time.Now()){
 		//success (Kinda)
-		writeResponse(w, http.StatusBadRequest, "Sale Request has Timed Out")
+		//writeResponse(w, http.StatusBadRequest, "Sale Request has Timed Out")
 		_, err = db.Exec(cancelTransaction, id)
 		if err != nil{
 			//error
@@ -293,7 +293,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	//success
-	writeResponse(w, http.StatusOK, "Sale Request Has Been Commited")
+	//writeResponse(w, http.StatusOK, "Sale Request Has Been Commited")
 	return
 }
 
@@ -389,6 +389,6 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	//success
-	writeResponse(w, http.StatusOK, "Sale Request Has Been Cancelled")
+	//writeResponse(w, http.StatusOK, "Sale Request Has Been Cancelled")
 	return
 }

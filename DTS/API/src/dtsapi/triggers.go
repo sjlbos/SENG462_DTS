@@ -104,7 +104,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 		//success
-		writeResponse(w, http.StatusOK, "Buy Trigger Created")
+		//writeResponse(w, http.StatusOK, "Buy Trigger Created")
 		return
 	}else{
 		CommandEvent := UserCommandEvent{
@@ -184,7 +184,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(Trigger, "buy")
 		//success
-		writeResponse(w, http.StatusOK, "Buy Trigger Set")
+		//writeResponse(w, http.StatusOK, "Buy Trigger Set")
 		return
 	}
 }
@@ -285,7 +285,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 		//success
-		writeResponse(w, http.StatusOK, "Sell Trigger Created")
+		//writeResponse(w, http.StatusOK, "Sell Trigger Created")
 		return		
 	}else{
 		CommandEvent := UserCommandEvent{
@@ -364,7 +364,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(Trigger, "sell")
 		//success
-		writeResponse(w, http.StatusOK, "Sell Trigger Set")
+		//writeResponse(w, http.StatusOK, "Sell Trigger Set")
 		return
 	}
 }
@@ -429,7 +429,7 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(Trigger, "buy")
 	//success
-	writeResponse(w, http.StatusOK, "Buy Trigger Cancelled")
+	//writeResponse(w, http.StatusOK, "Buy Trigger Cancelled")
 	return
 }
 
@@ -493,7 +493,7 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(Trigger, "buy")
 	//success
-	writeResponse(w, http.StatusOK, "Sell Trigger Cancelled")
+	//writeResponse(w, http.StatusOK, "Sell Trigger Cancelled")
 	return
 }
 
@@ -535,7 +535,7 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, "Quote Return is not Valid")
+		//writeResponse(w, http.StatusInternalServerError, "Quote Return is not Valid")
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
@@ -554,7 +554,7 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Quote is not greater than 0",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
-		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+		//writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 		return
 	}
 
@@ -635,7 +635,7 @@ func PerformBuyTrigger(w http.ResponseWriter, r *http.Request){
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, "Quote Return is not Valid")
+		//writeResponse(w, http.StatusInternalServerError, "Quote Return is not Valid")
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
@@ -654,7 +654,7 @@ func PerformBuyTrigger(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Quote is not greater than 0",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
-		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+		//writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 		return
 	}
 

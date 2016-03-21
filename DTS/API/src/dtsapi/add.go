@@ -75,7 +75,7 @@ func Add(w http.ResponseWriter, r *http.Request){
 		ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
+	    //writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
 	    return
 	}
 
@@ -114,11 +114,11 @@ func Add(w http.ResponseWriter, r *http.Request){
 				ErrorMessage    : "Failed To Create User",   
 			}
 			SendRabbitMessage(Error,Error.EventType)
-			writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
+			//writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
 			return
 		}
 		//success
-		writeResponse(w, http.StatusOK, "Account Created with Funds")
+		//writeResponse(w, http.StatusOK, "Account Created with Funds")
 		return
 	}
 
@@ -156,10 +156,10 @@ func Add(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Failed to add Funds to Account",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
-		writeResponse(w, http.StatusInternalServerError, "Failed To Add funds to Account")
+		//writeResponse(w, http.StatusInternalServerError, "Failed To Add funds to Account")
 		return
 	}
 	//success
-	writeResponse(w, http.StatusOK, "Funds Have been Added to Account")
+	//writeResponse(w, http.StatusOK, "Funds Have been Added to Account")
 	return
 }
