@@ -277,44 +277,41 @@ namespace TransactionMonitor.Repository
             if(userId == null)
                 throw new ArgumentNullException("userId");
 
-            using (var command = new NpgsqlCommand("get_all_events_by_user"))
+            var command = new NpgsqlCommand("get_all_events_by_user");
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+
+            command.Parameters.Add(new NpgsqlParameter
             {
-                command.CommandType = System.Data.CommandType.StoredProcedure;
+                NpgsqlDbType = NpgsqlDbType.Char,
+                Value = userId
+            });
 
-                command.Parameters.Add(new NpgsqlParameter
-                {
-                    NpgsqlDbType = NpgsqlDbType.Char,
-                    Value = userId
-                });
+            command.Parameters.Add(new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.TimestampTZ,
+                Value = start
+            });
 
-                command.Parameters.Add(new NpgsqlParameter
-                {
-                    NpgsqlDbType = NpgsqlDbType.TimestampTZ,
-                    Value = start
-                });
+            command.Parameters.Add(new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.TimestampTZ,
+                Value = end
+            });
 
-                command.Parameters.Add(new NpgsqlParameter
-                {
-                    NpgsqlDbType = NpgsqlDbType.TimestampTZ,
-                    Value = end
-                });
+            Log.DebugFormat(CultureInfo.InvariantCulture,
+                "Querying all event logs for user \"{0}\" using query \"{1}\".", userId, command.CommandText);
 
-                Log.DebugFormat(CultureInfo.InvariantCulture,
-                    "Querying all event logs for user \"{0}\" using query \"{1}\".", userId, command.CommandText);
+            var results = GetTransactionEventsUsingQuery(command);
 
-                var results = GetTransactionEventsUsingQuery(command);
+            Log.DebugFormat(CultureInfo.InvariantCulture,
+                "Query \"{0}\" completed successfully.", command.CommandText);
 
-                Log.DebugFormat(CultureInfo.InvariantCulture,
-                    "Query \"{0}\" completed successfully.", command.CommandText);
-
-                return results;
-            }
+            return results;
         }
 
         public IEnumerable<TransactionEvent> GetAllLogs(DateTime start, DateTime end)
         {
-            using (var command = new NpgsqlCommand("get_all_events"))
-            {
+            var command = new NpgsqlCommand("get_all_events");
                 command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 command.Parameters.Add(new NpgsqlParameter
@@ -338,7 +335,6 @@ namespace TransactionMonitor.Repository
                     "Query \"{0}\" completed successfully.", command.CommandText);
 
                 return results;
-            }
         }
 
         private static void AddCommonEventPropertyParametersToCommand(NpgsqlCommand command, TransactionEvent transactionEvent)
@@ -399,40 +395,43 @@ namespace TransactionMonitor.Repository
 
         private IEnumerable<TransactionEvent> GetTransactionEventsUsingQuery(NpgsqlCommand command)
         {
+            NpgsqlConnection connection = null;
+            NpgsqlDataReader reader = null;
+
             try
             {
-                using (var connection = new NpgsqlConnection(_connectionString))
+                connection = connection = new NpgsqlConnection(_connectionString);
+                connection.Open();
+                command.Connection = connection;
+                reader = command.ExecuteReader();
+                if (reader.HasRows)
                 {
-                    connection.Open();
-                    command.Connection = connection;
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        if (reader.HasRows)
-                        {
-                            // Todo: FIX ME! I make horrible use of memory!
-                            var transactionList = new List<TransactionEvent>();
-                            while (reader.Read())
-                            {
-                                transactionList.Add(GetTransactionEventFromRecord(reader));
-                            }
-                            return transactionList;
-                        }
-                        return null;
-                    }   
+                        yield return GetTransactionEventFromRecord(reader);
+                    }
                 }
             }
-            catch (SocketException ex)
+            finally
             {
-                throw new RepositoryException(String.Format(CultureInfo.InvariantCulture,
-                    "Encountered an error while attempting to execute database command \"{0}\" using connection string \"{1}\".", command.CommandText, _connectionString), ex);
-            }
-            catch (NpgsqlException ex)
-            {
-                throw new RepositoryException(String.Format(CultureInfo.InvariantCulture,
-                    "Encountered an error while attempting to execute database command \"{0}\" using connection string \"{1}\".", command.CommandText, _connectionString), ex);
-            }
-        }
+                if (reader != null)
+                {
+                    reader.Close();
+                    reader.Dispose();
+                }
 
+                if (command != null)
+                {
+                    command.Dispose();
+                }
+
+                if (connection != null)
+                {
+                    connection.Close();
+                    connection.Dispose();
+                }
+            } 
+        }
 
         /* Expected record:
          *      (0)  id
