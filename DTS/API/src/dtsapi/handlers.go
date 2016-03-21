@@ -60,19 +60,6 @@ type AccountTransactionEvent struct{
     AccountAction   string
     Funds           string
 }
-/* 
-q := QuoteServerEvent{
-    EventType       : "AccountTransaction",
-    Guid            : "",
-    OccuredAt       : "",
-    TransactionId   : "",
-    UserId          : "",
-    Service         : "",
-    Server          : "",
-    AccountAction   : "",
-    Funds           : "",
-}
-*/
 
 type SystemEvent struct{
     EventType       string
@@ -107,21 +94,6 @@ type ErrorEvent struct{
     ErrorMessage    string
 }
 
-/*q := ErrorEvent{
-    EventType       : "ErrorEvent",
-    Guid            : "",
-    OccuredAt       : "",
-    TransactionId   : "",
-    UserId          : "",
-    Service         : "",
-    Server          : "",
-    Command         : "",
-    StockSymbol     : "",
-    Funds           : "",
-    FileName        : "",
-    ErrorMessage    : "",   
-}*/
-
 type DebugEvent struct{
     EventType       string
 
@@ -138,20 +110,6 @@ type DebugEvent struct{
     FileName        string
     DebugMessage    string
 }
-/*q := DebugEvent{
-    EventType       : "DebugEvent",
-    Guid            : "",
-    OccuredAt       : "",
-    TransactionId   : "",
-    UserId          : "",
-    Service         : "",
-    Server          : "",
-    Command         : "",
-    StockSymbol     : "",
-    Funds           : "",
-    FileName        : "",
-    DebugMessage    : "",   
-}*/
 
 type TriggerEvent struct{
     TriggerType     string
@@ -159,13 +117,6 @@ type TriggerEvent struct{
     TransactionId   string
     UpdatedAt       time.Time
 }
-
-/*q := TriggerEvent{
-    TriggerType     : "buy" "sell",
-    UserId          : "",
-    TransactionId   : "",
-    UpdatedAt       : ""
-}*/
 
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
@@ -282,8 +233,6 @@ func SendRabbitMessage(message interface{}, EventType string){
         })
     failOnError(err, "Failed to publish a message")
 }
-
-
 
 func getDatabaseUserId(userId string) (int, bool, string){
     db := getDatabasePointerForUser(userId)

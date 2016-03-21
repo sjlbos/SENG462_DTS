@@ -28,22 +28,6 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 	decoder := json.NewDecoder(r.Body)
 	var t trigger_struct   
 	err = decoder.Decode(&t)
-	if err != nil {
-		//error
-		return
-	}
-
-	uid, found, _ := getDatabaseUserId(UserId)
-	if !found {
-		//error
-		return
-	}
-
-	AmountDec, err := decimal.NewFromString(t.Amount)
-	if err != nil{
-		//error
-		return
-	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -81,6 +65,22 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
+		if err != nil {
+			//error
+			return
+		}
+
+		uid, found, _ := getDatabaseUserId(UserId)
+		if !found {
+			//error
+			return
+		}
+
+		AmountDec, err := decimal.NewFromString(t.Amount)
+		if err != nil{
+			//error
+			return
+		}
 
 		_, err = db.Exec(addBuyTrigger, uid, Symbol, t.Amount, time.Now())
 		if err != nil{
@@ -119,6 +119,23 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+
+		if err != nil {
+			//error
+			return
+		}
+
+		uid, found, _ := getDatabaseUserId(UserId)
+		if !found {
+			//error
+			return
+		}
+
+		AmountDec, err := decimal.NewFromString(t.Price)
+		if err != nil{
+			//error
+			return
+		}
 
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "buy")
 		if err != nil{
@@ -188,20 +205,10 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 	decoder := json.NewDecoder(r.Body)
 	var t trigger_struct   
 	err := decoder.Decode(&t)
-	if err != nil {
-		//error
-		return
-	}
 
 	//Audit UserCommand
 	Guid := getNewGuid()
 	OccuredAt := time.Now()
-
-	uid, found, _ := getDatabaseUserId(UserId)
-	if !found {
-		//error
-		return
-	}
 
 	db := getDatabasePointerForUser(UserId)
 
@@ -238,6 +245,22 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+		if err != nil {
+			//error
+			return
+		}
+
+		uid, found, _ := getDatabaseUserId(UserId)
+		if !found {
+			//error
+			return
+		}
+
+		AmountDec, err := decimal.NewFromString(t.Amount)
+		if err != nil{
+			//error
+			return
+		}
 
 		_, err = db.Exec(addSellTrigger, uid, Symbol, t.Amount, time.Now())
 		if err != nil{
@@ -276,6 +299,23 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
+
+		if err != nil {
+			//error
+			return
+		}
+
+		uid, found, _ := getDatabaseUserId(UserId)
+		if !found {
+			//error
+			return
+		}
+
+		AmountDec, err := decimal.NewFromString(t.Price)
+		if err != nil{
+			//error
+			return
+		}
 
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "sell")
 		if err != nil{
