@@ -70,14 +70,13 @@
     <Compile Include="Api\AuditModule.cs" />
     <Compile Include="Api\NancyHostLauncherWorker.cs" />
     <Compile Include="Api\XmlLog.cs" />
-    <Compile Include="EventWriterWorker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repository\IAuditRepository.cs" />
     <Compile Include="Repository\PostgresAuditRepository.cs" />
     <Compile Include="Repository\RepositoryException.cs" />
     <Compile Include="TransactionMonitorService.cs" />
-    <Compile Include="TransactionQueueMonitorWorker.cs" />
+    <Compile Include="TransactionMonitorWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

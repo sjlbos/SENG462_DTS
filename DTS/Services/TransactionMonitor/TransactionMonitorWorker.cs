@@ -1,53 +1,47 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿
+using System;
 using System.Globalization;
-using System.Threading;
 using log4net;
+using Newtonsoft.Json;
+using RabbitMessaging;
 using ServiceHost;
 using TransactionEvents;
 using TransactionMonitor.Repository;
 
 namespace TransactionMonitor
 {
-    public class EventWriterWorker : IWorker
+    public class TransactionMonitorWorker : QueueMonitorWorker
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof (EventWriterWorker));
+        private static readonly ILog Log = LogManager.GetLogger(typeof (TransactionMonitorWorker));
 
-        public string InstanceId { get; private set; }
-
-        private readonly BlockingCollection<TransactionEvent> _eventBuffer;
+        private readonly TransactionEventConverter _deserializer;
         private readonly IAuditRepository _repository;
 
-        public EventWriterWorker(string instanceId, IAuditRepository repository, BlockingCollection<TransactionEvent> eventBuffer)
+        public TransactionMonitorWorker(string instanceId, IMessageReceiver messageReceiver, IAuditRepository repository)
+            : base(instanceId, messageReceiver)
         {
-            if(instanceId == null)
-                throw new ArgumentNullException("instanceId");
             if(repository == null)
                 throw new ArgumentNullException("repository");
-            if(eventBuffer == null)
-                throw new ArgumentNullException("eventBuffer");
 
-            InstanceId = instanceId;
-            _eventBuffer = eventBuffer;
             _repository = repository;
+            _deserializer = new TransactionEventConverter();
         }
 
-        public void Run(CancellationToken cancellationToken)
+        public override void ProcessMessage(string message)
         {
-            while (true)
+            if (message == null)
+                throw new ArgumentNullException("message");
+            try
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-
-                try
-                {
-                    var receivedEvent = _eventBuffer.Take(cancellationToken);
-                    WriteTransactionEventToRepository(receivedEvent);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
+                var transactionEvent = JsonConvert.DeserializeObject<TransactionEvent>(message, _deserializer);
+                Log.InfoFormat(CultureInfo.InvariantCulture, "Worker {0} received transaction message with Id=\"{1}\".", InstanceId, transactionEvent.Id);
+                
+                WriteTransactionEventToRepository(transactionEvent);
+            }
+            catch (UnrecognizedTransactionEventException ex)
+            {
+                Log.Error(String.Format(CultureInfo.InvariantCulture,
+                    "Worker {0} received an unrecognized transaction event.", InstanceId), ex);
             }
         }
 
@@ -93,25 +87,10 @@ namespace TransactionMonitor
             }
             catch (RepositoryException ex)
             {
-                Log.Error(String.Format(CultureInfo.InvariantCulture, 
+                Log.Error(String.Format(CultureInfo.InvariantCulture,
                     "Worker {0} was unable to write transaction event with Id={1} to the repository.",
                     InstanceId, transactionEvent.Id), ex);
             }
         }
-
-        #region IDisposable
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-
-        }
-
-        #endregion
     }
 }
