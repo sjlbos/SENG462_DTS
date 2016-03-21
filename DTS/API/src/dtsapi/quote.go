@@ -51,7 +51,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Symbol is Not Valid",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
-		writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
+		//writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 		return
 	}
 

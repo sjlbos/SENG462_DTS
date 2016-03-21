@@ -6,6 +6,7 @@ import (
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
+	"fmt"
 )
 
 func Buy(w http.ResponseWriter, r *http.Request){
