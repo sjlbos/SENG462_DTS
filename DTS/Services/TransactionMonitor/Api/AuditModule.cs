@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using Nancy;
 using TransactionEvents;
 using TransactionMonitor.Repository;
@@ -96,14 +95,7 @@ namespace TransactionMonitor.Api
                 }
 
                 var queryResults = _repository.GetAllLogs(startTime, endTime);
-
-                using (var fileStream = new FileStream(fileName, FileMode.Append))
-                {
-                    XmlLog.Write(queryResults, fileStream);
-                }
-
-                return null;
-                //return BuildFileDownloadResponse(fileName, queryResults);
+                return BuildFileDownloadResponse(fileName, queryResults);
             };
 
             Get["/users/{Id}"] = parameters =>

@@ -400,7 +400,7 @@ namespace TransactionMonitor.Repository
 
             try
             {
-                connection = connection = new NpgsqlConnection(_connectionString);
+                connection = new NpgsqlConnection(_connectionString);
                 connection.Open();
                 command.Connection = connection;
                 reader = command.ExecuteReader();
