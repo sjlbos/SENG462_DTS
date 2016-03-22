@@ -1,12 +1,10 @@
 ﻿
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using RabbitMessaging;
 using ServiceHost;
-using TransactionEvents;
 using TransactionMonitor.Api;
 using TransactionMonitor.Repository;
 

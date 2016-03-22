@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
+using System.Linq;
 using Nancy;
 using TransactionEvents;
 using TransactionMonitor.Repository;
@@ -10,10 +12,12 @@ namespace TransactionMonitor.Api
     public class AuditModule : NancyModule
     {
         private readonly IAuditRepository _repository;
+        private readonly string _hostName;
 
         public AuditModule(IAuditRepository repository) : base("/audit")
         {
             _repository = repository;
+            _hostName = ConfigurationManager.AppSettings["ApiRoot"];
 
             Get["/transactions"] = parameters =>
             {
@@ -52,6 +56,7 @@ namespace TransactionMonitor.Api
                     };
                 }
 
+                LogDumplogEvent(Request, null);
                 var queryResults = _repository.GetAllLogs(startTime, endTime);
                 return BuildXmlResponse(queryResults);
             };
@@ -94,6 +99,7 @@ namespace TransactionMonitor.Api
                     };
                 }
 
+                LogDumplogEvent(Request, null);
                 var queryResults = _repository.GetAllLogs(startTime, endTime);
                 return BuildFileDownloadResponse(fileName, queryResults);
             };
@@ -136,6 +142,7 @@ namespace TransactionMonitor.Api
                     };
                 }
 
+                LogDumplogEvent(Request, userId);
                 var queryResults = _repository.GetLogsForUser(userId, startTime, endTime);
                 return BuildXmlResponse(queryResults);
             };
@@ -179,6 +186,7 @@ namespace TransactionMonitor.Api
                     };
                 }
 
+                LogDumplogEvent(Request, userId);
                 var queryResults = _repository.GetLogsForUser(userId, startTime, endTime);
                 return BuildFileDownloadResponse(fileName, queryResults);
             };
@@ -211,7 +219,30 @@ namespace TransactionMonitor.Api
                 stream.Flush();
                 stream.Close();
             };
+
             return response;
+        }
+
+        private void LogDumplogEvent(Request request, string userId)
+        {
+            string transactionNumberHeader = request.Headers["X-TransNo"].FirstOrDefault();
+            if (String.IsNullOrEmpty(transactionNumberHeader))
+                return;
+
+            int transactionId = Int32.Parse(transactionNumberHeader);
+
+            var dumplogEvent = new UserCommandEvent
+            {
+                Id = Guid.NewGuid(),
+                TransactionId = transactionId,
+                Command = CommandType.DUMPLOG,
+                UserId = userId,
+                Service = "Transaction Monitor",
+                Server = _hostName,
+                OccuredAt = DateTime.Now
+            };
+
+            _repository.LogUserCommandEvent(dumplogEvent);
         }
     }
 }

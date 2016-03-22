@@ -16,6 +16,9 @@ namespace TransactionMonitor.Api
 
         public ApiBootstrapper(IAuditRepository repository)
         {
+            if(repository == null)
+                throw new ArgumentNullException("repository");
+
             _repository = repository;
         }
 

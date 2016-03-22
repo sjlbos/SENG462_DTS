@@ -354,7 +354,7 @@ namespace TransactionMonitor.Repository
             command.Parameters.Add(new NpgsqlParameter
             {
                 NpgsqlDbType = NpgsqlDbType.Char,
-                Value = transactionEvent.UserId
+                Value = ((object)transactionEvent.UserId) ?? DBNull.Value
             });
 
             command.Parameters.Add(new NpgsqlParameter
@@ -478,7 +478,7 @@ namespace TransactionMonitor.Repository
             te.LoggedAt = reader.GetDateTime(1);
             te.OccuredAt = reader.GetDateTime(2);
             te.TransactionId = reader.GetInt32(4);
-            te.UserId = reader.GetString(5);
+            te.UserId = (reader.IsDBNull(5)) ? null : reader.GetString(5);
             te.Service = reader.GetString(6);
             te.Server = reader.GetString(7);
         }
