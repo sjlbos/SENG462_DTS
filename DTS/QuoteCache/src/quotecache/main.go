@@ -13,6 +13,7 @@ import(
 	"github.com/streadway/amqp"
 	"github.com/nu7hatch/gouuid"
 	"log"
+	"math/rand"
 )
 
 type QuoteServerEvent struct{
@@ -207,6 +208,9 @@ func handleConnection(conn net.Conn){
 				var qconn net.Conn
 				for qconn == nil {
 					addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
+					if err != nil {
+
+					}
 					qconn, err = net.DialTCP("tcp", nil, addr)
 				}
 				if err != nil {
@@ -260,6 +264,14 @@ func handleConnection(conn net.Conn){
 		}
 		SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
 		_, err = conn.Write([]byte(price.String()))
+
+		backoff := 35 + rand.Intn(10)
+
+		tmpQuoteItem := QuoteCacheItem{
+			Expiration : time.Now().Add(time.Duration(backoff)*time.Second),
+			Value : price.String(),
+		}
+		memCache[stockSymbol] = tmpQuoteItem
 		if err != nil {
 		    // system error
 		}

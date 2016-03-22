@@ -1,5 +1,5 @@
 import argparse
-
+import subprocess
 import pika
 import json
 import Queue
@@ -29,6 +29,7 @@ doDump = False
 port = ""
 
 workerSum=0
+commandSum=0
 
 if args.filename:
 	filename = args.filename
@@ -111,7 +112,7 @@ def encode_Command(obj):
 
 def getAddCommand(User, Amount, Id):
 	uri = url + "/api/users/" + User
-	json_string = '{ "strAmount" : ' + Amount + ' }'
+	json_string = '{ "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
@@ -120,7 +121,7 @@ def getQuoteCommand(User, StockSymbol, Id):
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases"
-	json_string = '{"Symbol" : "' + StockSymbol + '", "strAmount" : ' + Amount + ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
@@ -133,7 +134,7 @@ def getCancelBuyCommand(User, Id):
 
 def getSellCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-sales"
-	json_string = '{"Symbol" : "' + StockSymbol + '", "strAmount" : ' + Amount + ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
@@ -146,7 +147,7 @@ def getCancelSellCommand(User, Id):
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
-	json_string = '{"strAmount" : ' + Amount + '}'
+	json_string = '{"Amount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
@@ -160,7 +161,7 @@ def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
-	json_string = '{"strAmount" : ' + Amount + '}'
+	json_string = '{"Amount" : ' + Amount + '}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
@@ -188,6 +189,7 @@ def getDisplaySummaryCommand(User, Id):
 fp = open(filename,'r')
 UserList = dict()
 for line in fp:
+	commandSum = commandSum + 1
 	line_parts = line.split(" ")
 	CommandNo = line_parts[0]
 	command_line = line_parts[1]
@@ -259,7 +261,7 @@ for userId in UserList:
 			UserCommands.add_command(getAddCommand("","",0))
 		UserCommands.add_command(tmpCommand)
 	json_send = json.dumps(UserCommands.reprJSON(), cls=ComplexEncoder)
-	print(json_send)
+	
 	slaveNo = sent_messages % int(num_Slaves) + 1
 	rKey = "Slave" + str(slaveNo)
 	rExchange = "WorkloadGenerator"
@@ -267,6 +269,7 @@ for userId in UserList:
 	channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
 	sent_messages = sent_messages + 1
 
+print("Sent " + str(commandSum) + "Commands")
 raw_input("Press Enter to continue...")
 messageCommand = ControlCommand()
 json_send = json.dumps(messageCommand.reprJSON(), cls=ComplexEncoder)
@@ -288,20 +291,8 @@ def callback(ch, method, properties, body):
     if workerSum == 0:
     	print("Complete")
     	if doDump:
-		UserCommands = BatchCommand("BatchOrder","Dumplog")
-		tmpCommand = getDumplogCommand(TransId)
-		UserCommands.add_command(tmpCommand)
-		json_send = json.dumps(UserCommands.reprJSON(), cls=ComplexEncoder)
-		print(json_send)
-		slaveNo = sent_messages % int(num_Slaves) + 1
-		rKey = "Slave" + str(slaveNo)
-		rExchange = "WorkloadGenerator"
-		channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
-		sent_messages = sent_messages + 1
 		print("Getting XML File")
-		f = open(outputFile, 'w')
-		output = urllib2.urlopen("http://B136.seng.uvic.ca/audit/transactions/" + outputFile)
-		f.write(output)
+		subprocess.call("wget http://b136.seng.uvic.ca:44410/audit/transactions/testLog", shell=True)
 
 
 
