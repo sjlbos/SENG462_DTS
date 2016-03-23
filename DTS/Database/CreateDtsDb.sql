@@ -450,7 +450,7 @@ DECLARE
 BEGIN
 	SELECT balance INTO _balance FROM users WHERE id = _uid;
 
-	UPDATE users SET balance = _balance - _dollar_amount;
+	UPDATE users SET balance = _balance - _dollar_amount where id = _uid;
 
 	INSERT INTO pending_triggers(
 		uid,
@@ -539,7 +539,7 @@ BEGIN
 		WHERE id = _id);
 
 	rtnMoney = moneySaved - (_stock_price * _num_shares);
-	UPDATE users SET balance = balance + rtnMoney WHERE id = _user_id;
+	UPDATE users SET balance = balance + rtnMoney WHERE id = _uid;
 
 	DELETE FROM pending_triggers WHERE id = _id;
 	RETURN _id;
@@ -569,8 +569,6 @@ BEGIN
 
 	_num_shares = moneySaved / _stock_price;
 
-	UPDATE portfolios SET num_shares = numshares - _num_shares;
-
 	INSERT INTO triggers(
 				uid, 
 				stock, 
@@ -589,6 +587,8 @@ BEGIN
 		WHERE id = _id)
 		RETURNING stock INTO _stock;
 
+	UPDATE portfolios SET num_shares = numshares - _num_shares WHERE id = _uid AND stock = _stock;
+
 	DELETE FROM pending_triggers WHERE id = _id RETURNING id INTO _transaction_id;
 
 	RETURN _transaction_id;
@@ -604,13 +604,13 @@ RETURNS void AS
 $$
 DECLARE
 	_dollar_amount money;
-	_user_id int;
+	_uid int;
 BEGIN
-	SELECT trigger_price * num_shares, uid INTO _dollar_amount, _user_id
+	SELECT trigger_price * num_shares, uid INTO _dollar_amount, _uid
 	FROM triggers
 	WHERE id = _id;	
 
-	UPDATE users SET balance = balance + _dollar_amount WHERE id = _user_id;
+	UPDATE users SET balance = balance + _dollar_amount WHERE id = _uid;
 
 	DELETE FROM triggers 
 	WHERE id = _id;
