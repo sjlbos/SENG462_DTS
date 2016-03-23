@@ -7,7 +7,7 @@ import (
     "strings"
     "github.com/gorilla/mux"
     "github.com/shopspring/decimal"
-   
+    "fmt" 
 )
 
 func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
