@@ -180,7 +180,8 @@ func getDatabasePointerForUser(userid string) (*sql.DB){
     for i := range userid {
         hash += int(userid[i]);
     }
-    return dbPointers[hash % len(dbPointers)];
+    hash = hash % len(dbPointers)
+    return dbPointers[hash];
 } 
 
 func msToTime(ms string) (time.Time, error) {

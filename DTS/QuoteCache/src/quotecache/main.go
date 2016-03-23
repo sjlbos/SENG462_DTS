@@ -170,6 +170,7 @@ func handleConnection(conn net.Conn){
 	_,err = conn.Read(status)
 	if err != nil{
 		// do stuff
+		println("ERROR READ: " + err.Error())
 		return
 	}
 	
@@ -194,11 +195,14 @@ func handleConnection(conn net.Conn){
 	if found {
 		if QuoteItem.Expiration.After(time.Now()){
 			fmt.Fprintf(conn, string(QuoteItem.Value))
+			conn.Close()
+			println("HIT")
 			return
 		}else{
 			found = false;
 		}
 	}
+	println("MISS")
 	if !found {
 		messages := make(chan string)
 		tmp_num_threads := num_threads;
@@ -209,12 +213,13 @@ func handleConnection(conn net.Conn){
 				for qconn == nil {
 					addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
 					if err != nil {
-
+						println("Error addr: " + err.Error())
 					}
 					qconn, err = net.DialTCP("tcp", nil, addr)
 				}
 				if err != nil {
 					//error
+					println("ERROR qconn: " + err.Error())
 					_, err = conn.Write([]byte("-1"))
 				}
 				_, err =fmt.Fprintf(qconn, sendString)
@@ -223,8 +228,8 @@ func handleConnection(conn net.Conn){
 				}
 				response := make([]byte, 100)
 				_, err = qconn.Read(response)	
-				messages <- string(response)
 				qconn.Close()
+				messages <- string(response)
 			}()
 			tmp_num_threads -= 1
 		}
@@ -235,6 +240,8 @@ func handleConnection(conn net.Conn){
 			//error
 
 		}
+		_, err = conn.Write([]byte(price.String()))
+		conn.Close()
 		stockSymbol = ParsedQuoteReturn[1]
 		ReturnUserId := ParsedQuoteReturn[2]
 		msTimeStamp,err := msToTime(ParsedQuoteReturn[3])
@@ -263,7 +270,6 @@ func handleConnection(conn net.Conn){
 			Cryptokey       : cryptoKey,
 		}
 		SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
-		_, err = conn.Write([]byte(price.String()))
 
 		backoff := 35 + rand.Intn(10)
 
@@ -347,8 +353,10 @@ func main(){
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
+			println("ERROR: " + err.Error())	
 			// handle error
+		}else{
+			go handleConnection(conn)
 		}
-		go handleConnection(conn)
 	}
 }

@@ -67,6 +67,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
+		return
 		if err != nil {
 			//error
 			return
@@ -121,7 +122,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-
+		return
 		if err != nil {
 			//error
 			return
@@ -248,6 +249,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+		return
 		if err != nil {
 			//error
 			return
@@ -302,7 +304,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
-
+		return
 		if err != nil {
 			//error
 			return
@@ -396,7 +398,7 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 		Funds           : "",
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
-
+	return
 	uid, found, _ := getDatabaseUserId(UserId)
 
 	if !found {
@@ -460,6 +462,7 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
 		Funds           : "",
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+	return
 	uid, found, _ := getDatabaseUserId(UserId)
 
 	if !found {

@@ -103,8 +103,8 @@ func main() {
         dbPointers[i], err = sql.Open("postgres", dbinfo)
         failOnError(err, "Failed to connect to DTS Database")
 
-        dbPointers[i].SetMaxOpenConns(50)
-        dbPointers[i].SetMaxIdleConns(50)
+        dbPointers[i].SetMaxOpenConns(200)
+        dbPointers[i].SetMaxIdleConns(200)
 
     }
 

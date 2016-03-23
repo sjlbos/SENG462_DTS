@@ -7,11 +7,10 @@ import (
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
-	"fmt"
+	//"fmt"
 )
 
 func Add(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintln(w, "Adding Funds Too Account");
 	zero,_ := decimal.NewFromString("0");
 
 	type add_struct struct {
@@ -26,7 +25,6 @@ func Add(w http.ResponseWriter, r *http.Request){
 	decoder := json.NewDecoder(r.Body)
 	var t add_struct   
 	err := decoder.Decode(&t)
-
 	//Audit UserCommand
 	Guid := getNewGuid()
 	CommandEvent := UserCommandEvent{
@@ -44,6 +42,7 @@ func Add(w http.ResponseWriter, r *http.Request){
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 	if err != nil{
 		//error
+		println(err.Error())
 		return
 	}
 
@@ -53,9 +52,8 @@ func Add(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	//Get user id from Databasse
+	//Get user id from Database
 	db := getDatabasePointerForUser(UserId)
-
 	var balanceStr string
 	var balance decimal.Decimal
 
@@ -75,7 +73,7 @@ func Add(w http.ResponseWriter, r *http.Request){
 		ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    //writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
+	    writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
 	    return
 	}
 
@@ -114,11 +112,11 @@ func Add(w http.ResponseWriter, r *http.Request){
 				ErrorMessage    : "Failed To Create User",   
 			}
 			SendRabbitMessage(Error,Error.EventType)
-			//writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
+			writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
 			return
 		}
 		//success
-		//writeResponse(w, http.StatusOK, "Account Created with Funds")
+		writeResponse(w, http.StatusOK, "Account Created with Funds")
 		return
 	}
 
