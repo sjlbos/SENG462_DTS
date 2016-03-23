@@ -242,7 +242,7 @@ namespace TransactionMonitor.Api
                 OccuredAt = DateTime.Now
             };
 
-            _repository.LogUserCommandEvent(dumplogEvent);
+            _repository.LogTransactionEvent(dumplogEvent);
         }
     }
 }

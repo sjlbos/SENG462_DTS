@@ -10,8 +10,6 @@ namespace TransactionMonitor.Repository
 {
     public class MongoDbAuditRepository : IAuditRepository
     {
-        private static ILog Log = LogManager.GetLogger(typeof (MongoDbAuditRepository));
-
         private readonly IMongoCollection<TransactionEvent> _eventCollection; 
 
         public MongoDbAuditRepository(string connectionString, string eventCollectionName)
@@ -44,34 +42,9 @@ namespace TransactionMonitor.Repository
 
         #region IAuditRepository
 
-        public void LogUserCommandEvent(UserCommandEvent userCommandEvent)
+        public void LogTransactionEvent(TransactionEvent transactionEvent)
         {
-            _eventCollection.InsertOne(userCommandEvent);
-        }
-
-        public void LogQuoteServerEvent(QuoteServerEvent quoteServerEvent)
-        {
-            _eventCollection.InsertOne(quoteServerEvent);
-        }
-
-        public void LogAccountTransactionEvent(AccountTransactionEvent accountTransactionEvent)
-        {
-            _eventCollection.InsertOne(accountTransactionEvent);
-        }
-
-        public void LogSystemEvent(SystemEvent systemEvent)
-        {
-            _eventCollection.InsertOne(systemEvent);
-        }
-
-        public void LogErrorEvent(ErrorEvent errorEvent)
-        {
-            _eventCollection.InsertOne(errorEvent);
-        }
-
-        public void LogDebugEvent(DebugEvent debugEvent)
-        {
-            _eventCollection.InsertOne(debugEvent);
+            _eventCollection.InsertOne(transactionEvent);
         }
 
         public IEnumerable<TransactionEvent> GetLogsForUser(string userId, DateTime start, DateTime end)

@@ -36,60 +36,12 @@ namespace TransactionMonitor
                 var transactionEvent = JsonConvert.DeserializeObject<TransactionEvent>(message, _deserializer);
                 Log.InfoFormat(CultureInfo.InvariantCulture, "Worker {0} received transaction message with Id=\"{1}\".", InstanceId, transactionEvent.Id);
                 
-                WriteTransactionEventToRepository(transactionEvent);
+                _repository.LogTransactionEvent(transactionEvent);
             }
             catch (UnrecognizedTransactionEventException ex)
             {
                 Log.Error(String.Format(CultureInfo.InvariantCulture,
                     "Worker {0} received an unrecognized transaction event.", InstanceId), ex);
-            }
-        }
-
-        private void WriteTransactionEventToRepository(TransactionEvent transactionEvent)
-        {
-            try
-            {
-                if (transactionEvent is UserCommandEvent)
-                {
-                    _repository.LogUserCommandEvent(transactionEvent as UserCommandEvent);
-                    return;
-                }
-
-                if (transactionEvent is QuoteServerEvent)
-                {
-                    _repository.LogQuoteServerEvent(transactionEvent as QuoteServerEvent);
-                    return;
-                }
-
-                if (transactionEvent is AccountTransactionEvent)
-                {
-                    _repository.LogAccountTransactionEvent(transactionEvent as AccountTransactionEvent);
-                    return;
-                }
-
-                if (transactionEvent is SystemEvent)
-                {
-                    _repository.LogSystemEvent(transactionEvent as SystemEvent);
-                    return;
-                }
-
-                if (transactionEvent is ErrorEvent)
-                {
-                    _repository.LogErrorEvent(transactionEvent as ErrorEvent);
-                    return;
-                }
-
-                if (transactionEvent is DebugEvent)
-                {
-                    _repository.LogDebugEvent(transactionEvent as DebugEvent);
-                    return;
-                }
-            }
-            catch (RepositoryException ex)
-            {
-                Log.Error(String.Format(CultureInfo.InvariantCulture,
-                    "Worker {0} was unable to write transaction event with Id={1} to the repository.",
-                    InstanceId, transactionEvent.Id), ex);
             }
         }
     }

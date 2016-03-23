@@ -6,13 +6,7 @@ namespace TransactionMonitor.Repository
 {
     public interface IAuditRepository
     {
-        void LogUserCommandEvent(UserCommandEvent userCommandEvent);
-        void LogQuoteServerEvent(QuoteServerEvent quoteServerEvent);
-        void LogAccountTransactionEvent(AccountTransactionEvent accountTransactionEvent);
-        void LogSystemEvent(SystemEvent systemEvent);
-        void LogErrorEvent(ErrorEvent errorEvent);
-        void LogDebugEvent(DebugEvent debugEvent);
-
+        void LogTransactionEvent(TransactionEvent transactionEvent);
         IEnumerable<TransactionEvent> GetLogsForUser(string userId, DateTime start, DateTime end);
         IEnumerable<TransactionEvent> GetAllLogs(DateTime start, DateTime end);
     }

@@ -34,6 +34,45 @@ namespace TransactionMonitor.Repository
             NpgsqlConnection.RegisterEnumGlobally<AccountAction>("account_action");
         }
 
+        public void LogTransactionEvent(TransactionEvent transactionEvent)
+        {
+            if (transactionEvent is UserCommandEvent)
+            {
+                LogUserCommandEvent(transactionEvent as UserCommandEvent);
+                return;
+            }
+
+            if (transactionEvent is QuoteServerEvent)
+            {
+                LogQuoteServerEvent(transactionEvent as QuoteServerEvent);
+                return;
+            }
+
+            if (transactionEvent is AccountTransactionEvent)
+            {
+                LogAccountTransactionEvent(transactionEvent as AccountTransactionEvent);
+                return;
+            }
+
+            if (transactionEvent is SystemEvent)
+            {
+                LogSystemEvent(transactionEvent as SystemEvent);
+                return;
+            }
+
+            if (transactionEvent is ErrorEvent)
+            {
+                LogErrorEvent(transactionEvent as ErrorEvent);
+                return;
+            }
+
+            if (transactionEvent is DebugEvent)
+            {
+                LogDebugEvent(transactionEvent as DebugEvent);
+                return;
+            }
+        }
+
         public void LogUserCommandEvent(UserCommandEvent userCommandEvent)
         {
             using (var command = new NpgsqlCommand("log_user_command_event"))
