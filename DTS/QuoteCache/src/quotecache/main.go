@@ -157,6 +157,21 @@ func msToTime(ms string) (time.Time, error) {
 }
 
 var memCache map[string]QuoteCacheItem
+var miss float64 = 0
+var hit  float64 = 0
+
+func EfficiencyCalc(){
+	for {
+		var HitToMiss float64 = hit/miss
+
+		var PercentHit float64 = hit/(hit+miss) 
+
+		fmt.Printf("Hit To Miss: %f\n", HitToMiss)
+		fmt.Printf("Percent Hit: %f\n", PercentHit) 
+
+		time.Sleep(time.Duration(10) * time.Second)
+	}
+}
 
 
 func handleConnection(conn net.Conn){
@@ -196,13 +211,13 @@ func handleConnection(conn net.Conn){
 		if QuoteItem.Expiration.After(time.Now()){
 			fmt.Fprintf(conn, string(QuoteItem.Value))
 			conn.Close()
-			println("HIT")
+			hit = hit + 1
 			return
 		}else{
 			found = false;
 		}
 	}
-	println("MISS")
+	miss = miss + 1
 	if !found {
 		messages := make(chan string)
 		tmp_num_threads := num_threads;
@@ -345,6 +360,7 @@ func main(){
     )
     failOnError(err, "Failed to declare an exchange")
 
+	go EfficiencyCalc()
 
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
