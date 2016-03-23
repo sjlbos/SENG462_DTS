@@ -65,12 +65,12 @@ namespace TransactionEvents
         public Decimal Price { get; set; }
         public DateTime QuoteServerTime { get; set; }
         public string CryptoKey { get; set; }
-
+        
         public override void WriteXml(XmlWriter w)
         {
             w.WriteStartElement("quoteServer");
             WriteCommonPropertyXml(w);
-            w.WriteElementString("price", Price.ToString("N2"));
+            w.WriteElementString("price", Price.ToString("F2"));
             w.WriteElementString("stockSymbol", StockSymbol);
             w.WriteElementString("quoteServerTime", GetTimestampString(QuoteServerTime));
             w.WriteElementString("cryptokey", CryptoKey);

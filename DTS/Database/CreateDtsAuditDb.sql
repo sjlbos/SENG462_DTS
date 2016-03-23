@@ -50,7 +50,7 @@ CREATE TABLE events(
 	occured_at timestamptz NOT NULL,
 	type event_type NOT NULL,
 	transaction_id int NOT NULL,
-	user_id char(10) NOT NULL,
+	user_id char(10),
 	service varchar(256) NOT NULL,
 	server varchar(256) NOT NULL
 );

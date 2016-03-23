@@ -1,12 +1,10 @@
 ﻿
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using RabbitMessaging;
 using ServiceHost;
-using TransactionEvents;
 using TransactionMonitor.Api;
 using TransactionMonitor.Repository;
 
@@ -17,19 +15,21 @@ namespace TransactionMonitor
         private int _workerCount;
         private string _dbConnectionString;
         private Uri _apiEndpoint;
+        private string _eventCollectionName;
 
         protected override void InitializeService()
         {
             _workerCount = Int32.Parse(ConfigurationManager.AppSettings["WorkerCount"]);
             _apiEndpoint = new Uri(ConfigurationManager.AppSettings["ApiRoot"]);
-            _dbConnectionString = ConfigurationManager.ConnectionStrings["DtsAuditDb"].ConnectionString;
+            _dbConnectionString = ConfigurationManager.ConnectionStrings["MongoAuditDb"].ConnectionString;
+            _eventCollectionName = ConfigurationManager.AppSettings["EventCollectionName"];
         }
 
         protected override IList<IWorker> GetWorkerList()
         {
      
             var workerList = new List<IWorker>();
-            var repository = new PostgresAuditRepository(_dbConnectionString);
+            var repository = new MongoDbAuditRepository(_dbConnectionString, _eventCollectionName);
 
             for (int i = 0; i < _workerCount; i++)
             {

@@ -34,6 +34,45 @@ namespace TransactionMonitor.Repository
             NpgsqlConnection.RegisterEnumGlobally<AccountAction>("account_action");
         }
 
+        public void LogTransactionEvent(TransactionEvent transactionEvent)
+        {
+            if (transactionEvent is UserCommandEvent)
+            {
+                LogUserCommandEvent(transactionEvent as UserCommandEvent);
+                return;
+            }
+
+            if (transactionEvent is QuoteServerEvent)
+            {
+                LogQuoteServerEvent(transactionEvent as QuoteServerEvent);
+                return;
+            }
+
+            if (transactionEvent is AccountTransactionEvent)
+            {
+                LogAccountTransactionEvent(transactionEvent as AccountTransactionEvent);
+                return;
+            }
+
+            if (transactionEvent is SystemEvent)
+            {
+                LogSystemEvent(transactionEvent as SystemEvent);
+                return;
+            }
+
+            if (transactionEvent is ErrorEvent)
+            {
+                LogErrorEvent(transactionEvent as ErrorEvent);
+                return;
+            }
+
+            if (transactionEvent is DebugEvent)
+            {
+                LogDebugEvent(transactionEvent as DebugEvent);
+                return;
+            }
+        }
+
         public void LogUserCommandEvent(UserCommandEvent userCommandEvent)
         {
             using (var command = new NpgsqlCommand("log_user_command_event"))
@@ -354,7 +393,7 @@ namespace TransactionMonitor.Repository
             command.Parameters.Add(new NpgsqlParameter
             {
                 NpgsqlDbType = NpgsqlDbType.Char,
-                Value = transactionEvent.UserId
+                Value = ((object)transactionEvent.UserId) ?? DBNull.Value
             });
 
             command.Parameters.Add(new NpgsqlParameter
@@ -478,7 +517,7 @@ namespace TransactionMonitor.Repository
             te.LoggedAt = reader.GetDateTime(1);
             te.OccuredAt = reader.GetDateTime(2);
             te.TransactionId = reader.GetInt32(4);
-            te.UserId = reader.GetString(5);
+            te.UserId = (reader.IsDBNull(5)) ? null : reader.GetString(5);
             te.Service = reader.GetString(6);
             te.Server = reader.GetString(7);
         }

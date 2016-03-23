@@ -108,7 +108,6 @@ zip -r $PACKAGE_DIR/TriggerManager.zip TriggerManager
 zip -r $PACKAGE_DIR/WorkloadGeneratorSlave.zip WorkloadGeneratorSlave
 zip -r $PACKAGE_DIR/DtsApi.zip DtsApi
 zip -r $PACKAGE_DIR/QuoteCache.zip QuoteCache
-zip -r $PACKAGE_DIR/QuoteRunner.zip QuoteRunner
 echo "Package creation complete."
 
 # Deploy Transaction Monitors
@@ -125,13 +124,6 @@ deployZipFile "$USER@$TRIGGER_MANAGER_SERVER$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACK
 # Deploy Quote Cache
 echo "Deploying Quote Cache to $QUOTE_CACHE_SERVER." 
 deployZipFile "$USER@$QUOTE_CACHE_SERVER$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR QuoteCache.zip
-
-# Deploy Quote Runners
-for host in "${QUOTE_RUNNER_SERVERS[@]}"
-do
-	echo "Deploying Quote Runner to $host."
-	deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR QuoteRunner.zip
-done
 
 # Deploy APIs 
 for host in "${API_SERVERS[@]}"

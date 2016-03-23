@@ -19,7 +19,7 @@ if [[ -z "$MONGO_VERSION" ]]; then
 fi
 
 # Variables
-TARGET_PLATFORM="mongodb-linux-x86_64-ubuntu1404"
+TARGET_PLATFORM="mongodb-linux-x86_64-rhel70"
 INSTALL_DIR=$INSTALL_ROOT/$TARGET_PLATFORM-$MONGO_VERSION
 
 echo
