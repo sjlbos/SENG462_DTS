@@ -14,7 +14,6 @@ import (
     "database/sql"
 	"github.com/streadway/amqp"
 	"github.com/nu7hatch/gouuid"
-    "math/rand"
 )
 
 type QuoteServerEvent struct{
@@ -124,13 +123,13 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 
 	addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
     if err != nil {
-        println("addr Error: " + err.String())
+        println("addr Error: " + err.Error())
         return "-1"
     }
 	qconn, err := net.DialTCP("tcp", nil, addr)
 	if err != nil {
 		//error
-		println("Error Connecting to Quote Cache: " + err.String())
+		println("Error Connecting to Quote Cache: " + err.Error())
 		return "-1"
 	}
 	
