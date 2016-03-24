@@ -123,6 +123,7 @@ func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, API
 			}
 		default: 
 			messages <- string(response)
+			return
 	}
 }
 
@@ -263,7 +264,7 @@ func handleConnection(conn net.Conn){
 				timeout <- true
 				break
 			default:
-				if time.Since(startTime) >= time.Duration(10)*time.Millisecond {
+				if time.Since(startTime)*time.Millisecond >= time.Duration(10)*time.Millisecond {
 					go getQuote(messages, timeout, stockSymbol, APIUserId)
 					startTime = time.Now()
 				}
