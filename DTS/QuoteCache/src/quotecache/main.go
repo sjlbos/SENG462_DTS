@@ -220,35 +220,34 @@ func handleConnection(conn net.Conn){
 	miss = miss + 1
 	if !found {
 		messages := make(chan string)
-		tmp_num_threads := num_threads;
-		for tmp_num_threads > 0 {
-			go func() {
-				sendString := stockSymbol + "," + APIUserId + "\n"
-				var qconn net.Conn
-				for qconn == nil {
-					addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
-					if err != nil {
-						println("Error addr: " + err.Error())
-					}
-					qconn, err = net.DialTCP("tcp", nil, addr)
-				}
+		startTime := time.Now()
+		go func() {
+			sendString := stockSymbol + "," + APIUserId + "\n"
+			var qconn net.Conn
+			for qconn == nil {
+				addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
 				if err != nil {
-					//error
-					println("ERROR qconn: " + err.Error())
-					_, err = conn.Write([]byte("-1"))
+					println("Error addr: " + err.Error())
 				}
-				_, err =fmt.Fprintf(qconn, sendString)
-				if err!= nil {
-					failOnError(err, "Error with fprintf")
-				}
-				response := make([]byte, 100)
-				_, err = qconn.Read(response)	
-				qconn.Close()
-				messages <- string(response)
-			}()
-			tmp_num_threads -= 1
-		}
+				qconn, err = net.DialTCP("tcp", nil, addr)
+			}
+			if err != nil {
+				//error
+				println("ERROR qconn: " + err.Error())
+				_, err = conn.Write([]byte("-1"))
+			}
+			_, err =fmt.Fprintf(qconn, sendString)
+			if err!= nil {
+				failOnError(err, "Error with fprintf")
+			}
+			response := make([]byte, 100)
+			_, err = qconn.Read(response)	
+			qconn.Close()
+			messages <- string(response)
+		}()
 		QuoteReturn := <-messages
+		diffTime := time.Since(startTime)
+		println(diffTime.String())
 		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
 		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
 		if err != nil{
@@ -360,7 +359,7 @@ func main(){
     )
     failOnError(err, "Failed to declare an exchange")
 
-	go EfficiencyCalc()
+	//go EfficiencyCalc()
 
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
