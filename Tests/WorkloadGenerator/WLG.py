@@ -112,7 +112,7 @@ def encode_Command(obj):
 
 def getAddCommand(User, Amount, Id):
 	uri = url + "/api/users/" + User
-	json_string = '{ "Amount" : ' + Amount + ' }'
+	json_string = '{ "Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
@@ -134,7 +134,7 @@ def getCancelBuyCommand(User, Id):
 
 def getSellCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-sales"
-	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
@@ -147,7 +147,7 @@ def getCancelSellCommand(User, Id):
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
-	json_string = '{"Amount" : ' + Amount + '}'
+	json_string = '{"Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
@@ -156,17 +156,17 @@ def getCancelSetBuyCommand(User, StockSymbol, Id):
 
 def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
 	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
-	json_string = '{"Price" : ' + Price + '}'
+	json_string = '{"Price" : "' + Price + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
-	json_string = '{"Amount" : ' + Amount + '}'
+	json_string = '{"Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
 	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
-	json_string = '{"Price" : ' + Price + '}'
+	json_string = '{"Price" : "' + Price + '"}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
