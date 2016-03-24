@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
+	//"strings"
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
@@ -41,47 +41,22 @@ func Add(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 	if err != nil{
-		//error
-		println(err.Error())
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	AmountDec,err := decimal.NewFromString(t.Amount)
 	if err != nil {	
-		//error
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	//Get user id from Database
 	db := getDatabasePointerForUser(UserId)
-	var balanceStr string
-	var balance decimal.Decimal
 
 	if(AmountDec.Cmp(zero) != 1){
 	    Error := ErrorEvent{
-		EventType       : "ErrorEvent",
-		Guid            : Guid.String(),
-		OccuredAt       : time.Now(),
-		TransactionId   : TransId,
-		UserId          : UserId,
-		Service         : "API",
-		Server          : Hostname,
-		Command         : "ADD",
-		StockSymbol     : "",
-		Funds           : t.Amount,
-		FileName        : "",
-		ErrorMessage    : "Amount to add is not a valid number",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
-	    return
-	}
-
-	id, found, balanceStr := getDatabaseUserId(UserId)
-	//User Account Does not Exist, Create Account 
-	if(found == false){
-		Debug := DebugEvent{
-			EventType       : "DebugEvent",
+			EventType       : "ErrorEvent",
 			Guid            : Guid.String(),
 			OccuredAt       : time.Now(),
 			TransactionId   : TransId,
@@ -92,72 +67,19 @@ func Add(w http.ResponseWriter, r *http.Request){
 			StockSymbol     : "",
 			Funds           : t.Amount,
 			FileName        : "",
-			DebugMessage    : "Created User Account",   
-		}
-		SendRabbitMessage(Debug,Debug.EventType)
-		_, err := db.Exec(addUser, UserId, t.Amount, time.Now())
-		if err != nil{
-			Error := ErrorEvent{
-				EventType       : "ErrorEvent",
-				Guid            : Guid.String(),
-				OccuredAt       : time.Now(),
-				TransactionId   : TransId,
-				UserId          : UserId,
-				Service         : "API",
-				Server          : Hostname,
-				Command         : "BUY",
-				StockSymbol     : "",
-				Funds           : t.Amount,
-				FileName        : "",
-				ErrorMessage    : "Failed To Create User",   
-			}
-			SendRabbitMessage(Error,Error.EventType)
-			writeResponse(w, http.StatusInternalServerError, "Failed To Create User Account")
-			return
-		}
-		//success
-		writeResponse(w, http.StatusOK, "Account Created with Funds")
+			ErrorMessage    : "Amount to add is not a valid number",   
+	    }
+	    SendRabbitMessage(Error,Error.EventType)
+	    writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
+	    return
+	}
+
+	_, err = db.Exec(addOrCreateUser, UserId, t.Amount, time.Now())
+	if err != nil {
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	//User Account Exists, Add Funds
-	balanceStr = strings.Trim(balanceStr, "$")
-	balanceStr = strings.Replace(balanceStr, ",", "", -1)
-	balance, err = decimal.NewFromString(balanceStr)
-	newBalance := balance.Add(AmountDec)
-	AccountEvent := AccountTransactionEvent{
-		EventType       : "AccountTransactionEvent",
-		Guid            : Guid.String(),
-		OccuredAt       : time.Now(),
-		TransactionId   : TransId,
-		UserId          : UserId,
-		Service         : "Account",
-		Server          : Hostname,
-		AccountAction   : "Add",
-		Funds           : t.Amount,
-	}
-	SendRabbitMessage(AccountEvent,AccountEvent.EventType)
-	_, err = db.Exec(updateBalance, id, newBalance)
-	if err != nil {
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "BUY",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Failed to add Funds to Account",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
-		//writeResponse(w, http.StatusInternalServerError, "Failed To Add funds to Account")
-		return
-	}
-	//success
-	//writeResponse(w, http.StatusOK, "Funds Have been Added to Account")
+	writeResponse(w, http.StatusOK, "Account Updated with Funds")
 	return
 }

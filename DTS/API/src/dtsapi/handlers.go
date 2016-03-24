@@ -14,6 +14,7 @@ import (
     "database/sql"
 	"github.com/streadway/amqp"
 	"github.com/nu7hatch/gouuid"
+    "math/rand"
 )
 
 type QuoteServerEvent struct{
@@ -120,14 +121,16 @@ type TriggerEvent struct{
 
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
-	var qconn net.Conn
-	for qconn == nil {
-		addr, _ := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
-		qconn, err = net.DialTCP("tcp", nil, addr)
-	}
+
+	addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
+    if err != nil {
+        println("addr Error: " + err.String())
+        return "-1"
+    }
+	qconn, err := net.DialTCP("tcp", nil, addr)
 	if err != nil {
 		//error
-		println("Error Connecting to Quote Cache")
+		println("Error Connecting to Quote Cache: " + err.String())
 		return "-1"
 	}
 	
@@ -140,6 +143,7 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	reply := make([]byte, 100)
 	_, err = qconn.Read(reply)
 	reply = bytes.Trim(reply, "\x00")
+    println(string(reply))
 	return string(reply)
 }
 
@@ -235,7 +239,7 @@ func SendRabbitMessage(message interface{}, EventType string){
     failOnError(err, "Failed to publish a message")
 }
 
-func getDatabaseUserId(userId string) (int, bool, string){
+func getDatabaseUserId(userId string) (*sql.DB, int, bool, string){
     db := getDatabasePointerForUser(userId)
     rows, err := db.Query(getUserId, userId)
     failOnError(err, "Failed to Create Statement: getUserId")
@@ -248,5 +252,5 @@ func getDatabaseUserId(userId string) (int, bool, string){
        err = rows.Scan(&id, &userid, &balanceStr)
     }
     rows.Close()
-    return id, found, balanceStr
+    return db, id, found, balanceStr
 }

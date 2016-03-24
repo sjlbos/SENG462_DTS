@@ -12,7 +12,6 @@ import (
 
 
 func Sell(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintln(w, "Creating Sell Request");
 	zero,_ := decimal.NewFromString("0");
 	type sell_struct struct {
 		Amount string
@@ -48,6 +47,30 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	if err != nil {
 		//error
+		writeResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	//get User Account Information
+	db, id, found, _ := getDatabaseUserId(UserId) 
+	if(found == false){
+		Error := ErrorEvent{
+			EventType       : "ErrorEvent",
+			Guid            : Guid.String(),
+			OccuredAt       : time.Now(),
+			TransactionId   : TransId,
+			UserId          : UserId,
+			Service         : "API",
+			Server          : Hostname,
+			Command         : "SELL",
+			StockSymbol     : "",
+			Funds           : t.Amount,
+			FileName        : "",
+			ErrorMessage    : "User Account Does Not Exist",   
+		}
+		SendRabbitMessage(Error,Error.EventType)
+		//error
+		writeResponse(w, http.StatusOK, "User Account Does Not Exist")
 		return
 	}
 
@@ -55,6 +78,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	AmountDec,err := decimal.NewFromString(t.Amount)
 	if err != nil{
 		//error
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if(AmountDec.Cmp(zero) != 1){
@@ -73,7 +97,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    //writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 	    return
 	}
 
@@ -95,12 +119,9 @@ func Sell(w http.ResponseWriter, r *http.Request){
 		ErrorMessage    : "Symbol is Not Valid",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    //writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
+	    writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 	    return
 	}
-
-	//get a database pointer
-	db := getDatabasePointerForUser(UserId)
 
 	//Get A Quote
 	var strPrice string
@@ -110,6 +131,7 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil{
 		//error
+		writeResponse(w, http.StatusBadRequest, err.Error())
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
@@ -128,33 +150,15 @@ func Sell(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Amount to add is not a valid number",   
 	    }
 	    SendRabbitMessage(Error,Error.EventType)
-	    //writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+	    writeResponse(w, http.StatusBadRequest, "Quote is not a valid number")
 	    return
-	}
-	
-
-	id, found, _ := getDatabaseUserId(UserId) 
-	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "SELL",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
-		//error
-		return
 	}
 
 	toSell := (AmountDec.Div(quotePrice)).Floor()
+	if toSell.Cmp(zero) != 1 {
+		writeResponse(w, http.StatusOK, "Can't Sell less than 1 Stock")
+		return
+	}
 
 	_,err = db.Exec(addPendingSale, id, t.Symbol, toSell.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
 	if err != nil {
@@ -173,11 +177,12 @@ func Sell(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Failed to create sale",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
+		writeResponse(w, http.StatusBadRequest, "Add pending Sale; " + err.Error())
 		//error
 		return
 	}
 	//success
-	//writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
 	return    
 }
 
@@ -189,9 +194,6 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 	if TransId == "" {
 		TransId = "0"
 	}
-
-	//get a db pointer
-	db := getDatabasePointerForUser(UserId)
 
 	//Audit UserCommand
 	Guid := getNewGuid()
@@ -211,7 +213,7 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
 	//Find user in database
-	uid, found, _ := getDatabaseUserId(UserId) 
+	db, uid, found, _ := getDatabaseUserId(UserId) 
 	if(found == false){
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",
@@ -307,9 +309,6 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 		TransId = "0"
 	}
 
-	//get DB Pointer
-	db := getDatabasePointerForUser(UserId)
-
 	//Audit UserCommand
 	Guid := getNewGuid()
 	OccuredAt := time.Now()
@@ -328,7 +327,7 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
 	//Find user in DB
-	uid, found,_ := getDatabaseUserId(UserId) 
+	db, uid, found,_ := getDatabaseUserId(UserId) 
 	if(found == false){
 		Error := ErrorEvent{
 			EventType       : "ErrorEvent",

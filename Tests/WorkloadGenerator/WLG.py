@@ -121,7 +121,7 @@ def getQuoteCommand(User, StockSymbol, Id):
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
 	uri = url + "/api/users/"+User+"/pending-purchases"
-	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : ' + Amount + ' }'
+	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : "' + Amount + '"" }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
@@ -269,7 +269,7 @@ for userId in UserList:
 	channel.basic_publish(exchange=rExchange, routing_key=rKey, body=json_send)
 	sent_messages = sent_messages + 1
 
-print("Sent " + str(commandSum) + "Commands")
+print("Sent " + str(commandSum) + " Commands")
 raw_input("Press Enter to continue...")
 messageCommand = ControlCommand()
 json_send = json.dumps(messageCommand.reprJSON(), cls=ComplexEncoder)

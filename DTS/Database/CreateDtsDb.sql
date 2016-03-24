@@ -88,25 +88,18 @@ LANGUAGE SQL VOLATILE;
 
 
 
-CREATE OR REPLACE FUNCTION add_user_account(_user_id varchar, _balance money, _created_at timestamptz)
+CREATE OR REPLACE FUNCTION add_or_create_user_account(_user_id varchar, _balance money, _created_at timestamptz)
 RETURNS int AS
 $$
-	INSERT INTO users(user_id, balance)
+	INSERT INTO users AS u (user_id, balance)
 	VALUES(_user_id, _balance)
+	ON CONFLICT (user_id)
+	DO UPDATE SET balance = u.balance + _balance
+	WHERE u.user_id = _user_id
 	RETURNING id;
 $$
 LANGUAGE SQL VOLATILE;
 
-
-
-CREATE OR REPLACE FUNCTION update_user_account_balance(_uid int, _balance money) 
-RETURNS void AS
-$$
-	UPDATE users
-	SET balance = _balance
-	WHERE id = _uid;
-$$
-LANGUAGE SQL VOLATILE;
 
 CREATE OR REPLACE FUNCTION get_user_by_id(_uid int)
 RETURNS TABLE(id int, user_id varchar, balance money) AS
@@ -511,7 +504,7 @@ CREATE OR REPLACE FUNCTION commit_buy_trigger(
 RETURNS int AS
 $$
 DECLARE
-	num_shares int;
+	_num_shares int;
 	rtnMoney money;
 	moneySaved money;
 BEGIN
@@ -519,7 +512,7 @@ BEGIN
 	FROM pending_triggers 
 	WHERE uid = _uid;
 
-	num_shares = moneySaved / _stock_price;
+	_num_shares = moneySaved / _stock_price;
 
 	INSERT INTO triggers(
 					uid, 
@@ -587,7 +580,7 @@ BEGIN
 		WHERE id = _id)
 		RETURNING stock INTO _stock;
 
-	UPDATE portfolios SET num_shares = numshares - _num_shares WHERE id = _uid AND stock = _stock;
+	UPDATE portfolios SET num_shares = num_shares - _num_shares WHERE uid = _uid AND stock = _stock;
 
 	DELETE FROM pending_triggers WHERE id = _id RETURNING id INTO _transaction_id;
 

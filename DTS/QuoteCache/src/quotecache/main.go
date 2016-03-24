@@ -167,7 +167,7 @@ func EfficiencyCalc(){
 		var PercentHit float64 = hit/(hit+miss) 
 
 		fmt.Printf("Hit To Miss: %f\n", HitToMiss)
-		fmt.Printf("Percent Hit: %f\n", PercentHit) 
+		fmt.Printf("Percent Hit: %f\n\n", PercentHit) 
 
 		time.Sleep(time.Duration(10) * time.Second)
 	}

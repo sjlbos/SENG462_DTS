@@ -4,7 +4,7 @@ import (
 	"net"
 )
 
-const MaxConnections = 10000
+const MaxConnections = 500
 
 type Error string
 

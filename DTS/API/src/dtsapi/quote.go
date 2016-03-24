@@ -1,7 +1,7 @@
 package main
 
 import (
-    "fmt"
+    //"fmt"
     "net/http"
     "time"
     "github.com/gorilla/mux"
@@ -9,7 +9,6 @@ import (
 )
 
 func Quote(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w, "Getting Quote");
 	vars := mux.Vars(r)
 	StockId := vars["symbol"]
 	UserId := vars["id"]
@@ -51,20 +50,19 @@ func Quote(w http.ResponseWriter, r *http.Request){
 			ErrorMessage    : "Symbol is Not Valid",   
 		}
 		SendRabbitMessage(Error,Error.EventType)
-		//writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
+		writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 		return
 	}
 
 	var strPrice string
 	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
 
-
 	var price decimal.Decimal
 	price, err := decimal.NewFromString(strPrice)
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusBadRequest, "Quote Return: " + err.Error())
 		return
 	}
 	var Output string = "The Quote For UserId " + UserId + " and StockId " + StockId + " returned " + price.String()
-	fmt.Fprintln(w, Output)
+	writeResponse(w, http.StatusOK, Output)
 }
