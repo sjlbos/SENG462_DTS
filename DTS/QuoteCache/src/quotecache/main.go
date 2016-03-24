@@ -95,6 +95,37 @@ type QuoteCacheItem struct{
 	Value		string
 }
 
+func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string) {
+	sendString := stockSymbol + "," + APIUserId + "\n"
+	addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
+	if err != nil {
+		return
+	}
+	qconn, err := net.DialTCP("tcp", nil, addr)
+	if err != nil {
+		//error
+		println("ERROR qconn: " + err.Error())
+		return
+	}
+	_, err =fmt.Fprintf(qconn, sendString)
+	if err != nil {
+		failOnError(err, "Error with fprintf")
+	}
+	response := make([]byte, 100)
+	_, err = qconn.Read(response)	
+	qconn.Close()
+	select { 
+		case _, ok := <- timeout:
+			if ok {
+				return
+			}else{
+				return
+			}
+		default: 
+			messages <- string(response)
+	}
+}
+
 func getNewGuid() (uuid.UUID){
     guid,err := uuid.NewV4()
     if err != nil{
@@ -220,32 +251,24 @@ func handleConnection(conn net.Conn){
 	miss = miss + 1
 	if !found {
 		messages := make(chan string)
+		timeout := make(chan bool)
 		startTime := time.Now()
-		go func() {
-			sendString := stockSymbol + "," + APIUserId + "\n"
-			var qconn net.Conn
-			for qconn == nil {
-				addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
-				if err != nil {
-					println("Error addr: " + err.Error())
+
+		var QuoteReturn string
+
+		go getQuote(messages, timeout, stockSymbol, APIUserId)
+
+		select{
+			case QuoteReturn = <-messages:
+				timeout <- true
+				break
+			default:
+				if time.Since(startTime) >= time.Duration(10)*time.Millisecond {
+					go getQuote(messages, timeout, stockSymbol, APIUserId)
+					startTime = time.Now()
 				}
-				qconn, err = net.DialTCP("tcp", nil, addr)
-			}
-			if err != nil {
-				//error
-				println("ERROR qconn: " + err.Error())
-				_, err = conn.Write([]byte("-1"))
-			}
-			_, err =fmt.Fprintf(qconn, sendString)
-			if err!= nil {
-				failOnError(err, "Error with fprintf")
-			}
-			response := make([]byte, 100)
-			_, err = qconn.Read(response)	
-			qconn.Close()
-			messages <- string(response)
-		}()
-		QuoteReturn := <-messages
+		}
+
 		diffTime := time.Since(startTime)
 		println(diffTime.String())
 		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
