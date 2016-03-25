@@ -81,7 +81,7 @@ type SystemEvent struct{
     FileName        string
 }
 
-var num_threads int
+var thread_wait int
 
 var rabbitConnectionString string
 var rconn *amqp.Connection
@@ -101,7 +101,7 @@ func spawnQuoteThreads(messages chan string, timeout <-chan bool, stockSymbol st
 		case _, _ = <-timeout:
 			return
 		default:
-			time.Sleep(time.Duration(10) * time.Millisecond)
+			time.Sleep(time.Duration(thread_wait) * time.Millisecond)
 			go getQuote(messages, timeout, stockSymbol, APIUserId)
 			spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
 	}
@@ -334,7 +334,7 @@ func main(){
 		RabbitPort     string
 		HostPort       string
 		QuotePort      string
-		NumThreads     string
+		ThreadWait     string
     }
     file, err := os.Open("conf.json")
     if err != nil {
@@ -350,7 +350,7 @@ func main(){
     var rhost = configuration.RabbitHost
     var rport = configuration.RabbitPort
     quotePort = configuration.QuotePort
-    num_threads,err = strconv.Atoi(configuration.NumThreads)
+    thread_wait,err = strconv.Atoi(configuration.NumThreads)
     if err != nil {
     	//error
     }
