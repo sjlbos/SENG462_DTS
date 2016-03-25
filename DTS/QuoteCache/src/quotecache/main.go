@@ -239,6 +239,7 @@ func handleConnection(conn net.Conn){
 						println("ERROR qconn: " + err.Error())
 						return
 					}
+					defer qconn.Close()
 					_, err =fmt.Fprintf(qconn, sendString)
 					if err != nil {
 						failOnError(err, "Error with fprintf")
