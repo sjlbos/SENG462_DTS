@@ -98,9 +98,7 @@ type QuoteCacheItem struct{
 func spawnQuoteThreads(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string){
 	go getQuote(messages, timeout, stockSymbol, APIUserId)
 	select{
-		case message, ok := <-timeout:
-			println(message)
-			println(ok)
+		case _, _ = <-timeout:
 			return
 		default:
 			time.Sleep(time.Duration(10) * time.Millisecond)
@@ -127,14 +125,15 @@ func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, API
 	}
 	response := make([]byte, 100)
 	_, err = qconn.Read(response)	
-	qconn.Close()
 	select { 
 		case _, ok := <- timeout:
 		if ok {
-			messages <- string(response)
+			return
 		}else{
 			return
 		}
+		default:
+			messages <- string(response)
 	}
 }
 
@@ -264,16 +263,12 @@ func handleConnection(conn net.Conn){
 	if !found {
 		messages := make(chan string)
 		timeout := make(chan bool)
-		startTime := time.Now()
 
 		go spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
 
 		QuoteReturn := <-messages
 		timeout <- true;
 
-
-		diffTime := time.Since(startTime)
-		println(diffTime.String())
 		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
 		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
 		if err != nil{
