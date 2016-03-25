@@ -95,47 +95,6 @@ type QuoteCacheItem struct{
 	Value		string
 }
 
-func spawnQuoteThreads(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string){
-	go getQuote(messages, timeout, stockSymbol, APIUserId)
-	select{
-		case _, _ = <-timeout:
-			return
-		default:
-			time.Sleep(time.Duration(thread_wait) * time.Millisecond)
-			go getQuote(messages, timeout, stockSymbol, APIUserId)
-			spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
-	}
-}
-
-func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string) {
-	sendString := stockSymbol + "," + APIUserId + "\n"
-	addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
-	if err != nil {
-		return
-	}
-	qconn, err := net.DialTCP("tcp", nil, addr)
-	if err != nil {
-		//error
-		println("ERROR qconn: " + err.Error())
-		return
-	}
-	_, err =fmt.Fprintf(qconn, sendString)
-	if err != nil {
-		failOnError(err, "Error with fprintf")
-	}
-	response := make([]byte, 100)
-	_, err = qconn.Read(response)	
-	select { 
-		case _, ok := <- timeout:
-		if ok {
-			return
-		}else{
-			return
-		}
-		default:
-			messages <- string(response)
-	}
-}
 
 func getNewGuid() (uuid.UUID){
     guid,err := uuid.NewV4()
@@ -262,12 +221,39 @@ func handleConnection(conn net.Conn){
 	miss = miss + 1
 	if !found {
 		messages := make(chan string)
-		timeout := make(chan bool)
+		var returned bool = false
+		num_threads := 0
 
-		go spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
+		go func(){
+			for returned == false {
+				num_threads = num_threads + 1
+				go func(){
+					sendString := stockSymbol + "," + APIUserId + "\n"
+					addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
+					if err != nil {
+						return
+					}
+					qconn, err := net.DialTCP("tcp", nil, addr)
+					if err != nil {
+						//error
+						println("ERROR qconn: " + err.Error())
+						return
+					}
+					_, err =fmt.Fprintf(qconn, sendString)
+					if err != nil {
+						failOnError(err, "Error with fprintf")
+					}
+					response := make([]byte, 100)
+					_, err = qconn.Read(response)	
+					returned = true
+					messages <- string(response)
+				}()
+				time.Sleep(time.Duration(thread_wait) * time.Millisecond)
+			}
+		}()
+
 
 		QuoteReturn := <-messages
-		timeout <- true;
 
 		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
 		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
@@ -316,11 +302,12 @@ func handleConnection(conn net.Conn){
 		if err != nil {
 		    // system error
 		}
+
+		fmt.Println("Threads Used: %d", num_threads)
 		for i := 0; i < num_threads-1; i++ {
 			<- messages
 		}
 		close(messages)
-		close(timeout)
 		return
 	}		
 }
@@ -330,7 +317,7 @@ func main(){
 
 
     type Configuration struct {
-        	RabbitHost     string
+        RabbitHost     string
 		RabbitPort     string
 		HostPort       string
 		QuotePort      string
@@ -350,7 +337,7 @@ func main(){
     var rhost = configuration.RabbitHost
     var rport = configuration.RabbitPort
     quotePort = configuration.QuotePort
-    thread_wait,err = strconv.Atoi(configuration.NumThreads)
+    thread_wait,err = strconv.Atoi(configuration.ThreadWait)
     if err != nil {
     	//error
     }
@@ -381,7 +368,7 @@ func main(){
     )
     failOnError(err, "Failed to declare an exchange")
 
-	//go EfficiencyCalc()
+	go EfficiencyCalc()
 
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
