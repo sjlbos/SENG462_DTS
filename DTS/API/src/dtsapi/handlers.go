@@ -142,7 +142,6 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	reply := make([]byte, 100)
 	_, err = qconn.Read(reply)
 	reply = bytes.Trim(reply, "\x00")
-    println(string(reply))
 	return string(reply)
 }
 
