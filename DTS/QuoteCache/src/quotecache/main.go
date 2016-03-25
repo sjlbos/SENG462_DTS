@@ -304,7 +304,6 @@ func handleConnection(conn net.Conn){
 		    // system error
 		}
 
-		fmt.Println("Threads Used: %d", num_threads)
 		for i := 0; i < num_threads-1; i++ {
 			<- messages
 		}

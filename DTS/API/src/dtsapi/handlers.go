@@ -141,12 +141,12 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 
 	reply := make([]byte, 100)
 	_, err = qconn.Read(reply)
-	reply = bytes.Trim(reply, "\x00")
+	reply = bytes.Trim(reply, "\x00")X
 	return string(reply)
 }
 
 func writeResponse(w http.ResponseWriter, responseCode int, response string){
-	w.WriteHeader(responseCode)
+	w.WriteHeader(200)
 	fmt.Fprintln(w, response)
 }
 
