@@ -95,6 +95,20 @@ type QuoteCacheItem struct{
 	Value		string
 }
 
+func spawnQuoteThreads(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string){
+	go getQuote(messages, timeout, stockSymbol, APIUserId)
+	select{
+		case message, ok := <-timeout:
+			println(message)
+			println(ok)
+			return
+		default:
+			time.Sleep(time.Duration(10) * time.Millisecond)
+			go getQuote(messages, timeout, stockSymbol, APIUserId)
+			spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
+	}
+}
+
 func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, APIUserId string) {
 	sendString := stockSymbol + "," + APIUserId + "\n"
 	addr, err := net.ResolveTCPAddr("tcp", "quoteserve.seng.uvic.ca:" + quotePort)
@@ -255,20 +269,11 @@ func handleConnection(conn net.Conn){
 		timeout := make(chan bool)
 		startTime := time.Now()
 
-		var QuoteReturn string
+		go spawnQuoteThreads(messages, timeout, stockSymbol, APIUserId)
 
-		go getQuote(messages, timeout, stockSymbol, APIUserId)
+		QuoteReturn := <-messages
+		timeout <- true;
 
-		select{
-			case QuoteReturn = <-messages:
-				timeout <- true
-				break
-			default:
-				if time.Since(startTime)*time.Millisecond >= time.Duration(10)*time.Millisecond {
-					go getQuote(messages, timeout, stockSymbol, APIUserId)
-					startTime = time.Now()
-				}
-		}
 
 		diffTime := time.Since(startTime)
 		println(diffTime.String())
