@@ -130,14 +130,11 @@ func getQuote(messages chan string, timeout <-chan bool, stockSymbol string, API
 	qconn.Close()
 	select { 
 		case _, ok := <- timeout:
-			if ok {
-				return
-			}else{
-				return
-			}
-		default: 
+		if ok {
 			messages <- string(response)
+		}else{
 			return
+		}
 	}
 }
 
@@ -328,6 +325,7 @@ func handleConnection(conn net.Conn){
 			<- messages
 		}
 		close(messages)
+		close(timeout)
 		return
 	}		
 }
