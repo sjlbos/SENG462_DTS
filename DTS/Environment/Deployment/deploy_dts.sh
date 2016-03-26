@@ -140,7 +140,7 @@ do
 done
 
 # Deploy WLG Slaves
-SLAVE_NUM=0
+SLAVE_NUM=1
 for host in "${WLG_SLAVE_SERVERS[@]}"
 do
 	echo "Deploying WLG slave to $host."
@@ -152,7 +152,7 @@ do
 	unzip -o $DEPLOYMENT_ROOT/WorkloadGeneratorSlave.zip -d $DEPLOYMENT_ROOT
 	rm -f $DEPLOYMENT_ROOT/WorkloadGeneratorSlave.zip
 	chmod 770 -R $DEPLOYMENT_ROOT/WorkloadGeneratorSlave
-	sed -i "s/{SLAVE_NUM}/Slave$SLAVE_NUM/" $DEPLOYMENT_ROOT/WorkloadGeneratorSlave/WorkloadGeneratorSlave.exe.config
+	sed -i "s/{SLAVE_NUM}/$SLAVE_NUM/" $DEPLOYMENT_ROOT/WorkloadGeneratorSlave/WorkloadGeneratorSlave.exe.config
 EOF
 	SLAVE_NUM=$((SLAVE_NUM+1))
 done
