@@ -5,6 +5,8 @@ import json
 import Queue
 import urllib2
 import random
+import sys
+
 
 parser = argparse.ArgumentParser(description='Workload Generator for Distributed System')
 parser.add_argument('--filename', nargs='?')
@@ -298,7 +300,7 @@ def callback(ch, method, properties, body):
     	if doDump:
 		print("Getting XML File")
 		subprocess.call("wget http://b136.seng.uvic.ca:44410/audit/transactions/testLog", shell=True)
-
+		sys.exit(0)
 
 
 print("Waiting for workers")
