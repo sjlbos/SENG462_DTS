@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 using Newtonsoft.Json;
@@ -33,7 +34,7 @@ namespace WorkloadGeneratorSlave
             _statusPublisher = statusPublisher;
         }
 
-        public override void ProcessMessage(string message)
+        public override void ProcessMessage(string message, CancellationToken cancellationToken)
         {
             if (message == null)
                 throw new ArgumentNullException("message");
@@ -48,7 +49,7 @@ namespace WorkloadGeneratorSlave
                 }
                 if (deserializedMessage is ControlMessage)
                 {
-                    HandleControlMessage(deserializedMessage as ControlMessage);
+                    HandleControlMessage(deserializedMessage as ControlMessage, cancellationToken);
                     return;
                 }      
             }
@@ -66,7 +67,7 @@ namespace WorkloadGeneratorSlave
             _batchQueue.Enqueue(message);
         }
 
-        private void HandleControlMessage(ControlMessage message)
+        private void HandleControlMessage(ControlMessage message, CancellationToken cancellationToken)
         {
             Log.InfoFormat(CultureInfo.InvariantCulture,
                 "Received control message \"{0}\", Id={1}.", message.Command, message.Id);
@@ -74,7 +75,7 @@ namespace WorkloadGeneratorSlave
             switch (message.Command)
             {
                 case ControlMessage.StartCommand:
-                    ProcessWorkloadOrders(_httpWorkerCount);
+                    ProcessWorkloadOrders(_httpWorkerCount, cancellationToken);
                     break;
                 default:
                     Log.Error("Unrecognized command: " + message.Command);
@@ -82,14 +83,14 @@ namespace WorkloadGeneratorSlave
             }
         }
 
-        private void ProcessWorkloadOrders(int workerThreadCount)
+        private void ProcessWorkloadOrders(int workerThreadCount, CancellationToken cancellationToken)
         {
             Log.InfoFormat(CultureInfo.InvariantCulture,
                 "Starting command batch execution with {0} threads.", workerThreadCount);
             var taskList = new List<Task>();
             for (int i = 0; i < workerThreadCount; i++)
             {
-                taskList.Add(Task.Run(() => ProcessWorkloadOrders()));
+                taskList.Add(Task.Run(() => ProcessWorkloadOrders(), cancellationToken));
             }
             Task.WaitAll(taskList.ToArray());
 

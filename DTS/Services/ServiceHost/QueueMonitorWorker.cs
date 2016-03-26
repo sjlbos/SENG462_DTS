@@ -43,7 +43,7 @@ namespace ServiceHost
                     currentMessage = Receiver.GetNextMessage();
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    ProcessMessage(currentMessage);
+                    ProcessMessage(currentMessage, cancellationToken);
                     Receiver.AckLastMessage();
                 }
                 catch (Exception ex)
@@ -58,7 +58,7 @@ namespace ServiceHost
             }     
         }
 
-        public abstract void ProcessMessage(string message);
+        public abstract void ProcessMessage(string message, CancellationToken cancellationToken);
 
         #region IDisposable
 
