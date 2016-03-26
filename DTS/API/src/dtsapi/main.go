@@ -108,7 +108,7 @@ func main() {
 
     }
 
-    Hostname, err := os.Hostname()
+    Hostname, err = os.Hostname()
     println("Running on :", Hostname)
 
     router := NewRouter()
