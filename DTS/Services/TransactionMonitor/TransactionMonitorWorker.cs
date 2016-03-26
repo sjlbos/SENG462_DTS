@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Globalization;
+using System.Threading;
 using log4net;
 using Newtonsoft.Json;
 using RabbitMessaging;
@@ -27,7 +28,7 @@ namespace TransactionMonitor
             _deserializer = new TransactionEventConverter();
         }
 
-        public override void ProcessMessage(string message)
+        public override void ProcessMessage(string message, CancellationToken cancellationToken)
         {
             if (message == null)
                 throw new ArgumentNullException("message");

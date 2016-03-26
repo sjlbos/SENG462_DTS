@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Threading;
 using log4net;
 using Newtonsoft.Json;
 using RabbitMessaging;
@@ -36,7 +37,8 @@ namespace TriggerManager
         /// on a shared queue.
         /// </summary>
         /// <param name="message">A JSON string representation of a TriggerUpdateNotification.</param>
-        public override void ProcessMessage(string message)
+        /// <param name="cancellationToken">Inerited parameter (not used).</param>
+        public override void ProcessMessage(string message, CancellationToken cancellationToken)
         {
             try
             {

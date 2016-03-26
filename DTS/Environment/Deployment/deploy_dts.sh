@@ -35,7 +35,7 @@ HOST_SUFFIX=".seng.uvic.ca"
 WEB_SERVERS=("")
 WEB_SERVER_PORT=""
 
-API_SERVERS=("b148" "b149" "b150")
+API_SERVERS=("b147" "b148" "b149" "b150")
 API_PORT="44410"
 
 QUOTE_CACHE_SERVER="b143"
@@ -52,7 +52,7 @@ DTS_DB_PORT="44410"
 AUDIT_DB_SERVER="b132"
 AUDIT_DB_PORT="44410"
 
-WLG_SLAVE_SERVERS=("b138" "b139" "b140" "b141" "b145" "b146" "b147")
+WLG_SLAVE_SERVERS=("b138" "b139" "b140" "b141" "b145" "b146")
 
 # Local Paths
 PACKAGE_DIR=$REPO_ROOT/packages
@@ -140,8 +140,19 @@ do
 done
 
 # Deploy WLG Slaves
+SLAVE_NUM=1
 for host in "${WLG_SLAVE_SERVERS[@]}"
 do
 	echo "Deploying WLG slave to $host."
-	deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR WorkloadGeneratorSlave.zip
+	SSH_PATH="$USER@$host$HOST_SUFFIX"
+	ssh $SSH_PATH "mkdir -p $DEPLOYMENT_ROOT"
+	scp $PACKAGE_DIR/WorkloadGeneratorSlave.zip $SSH_PATH:$DEPLOYMENT_ROOT
+	ssh $SSH_PATH <<EOF
+	rm -rf $DEPLOYMENT_ROOT/WorkloadGeneratorSlave
+	unzip -o $DEPLOYMENT_ROOT/WorkloadGeneratorSlave.zip -d $DEPLOYMENT_ROOT
+	rm -f $DEPLOYMENT_ROOT/WorkloadGeneratorSlave.zip
+	chmod 770 -R $DEPLOYMENT_ROOT/WorkloadGeneratorSlave
+	sed -i "s/{SLAVE_NUM}/$SLAVE_NUM/" $DEPLOYMENT_ROOT/WorkloadGeneratorSlave/WorkloadGeneratorSlave.exe.config
+EOF
+	SLAVE_NUM=$((SLAVE_NUM+1))
 done

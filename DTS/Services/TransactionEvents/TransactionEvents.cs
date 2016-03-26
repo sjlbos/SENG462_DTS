@@ -24,8 +24,15 @@ namespace TransactionEvents
         {
             w.WriteElementString("timestamp", GetTimestampString(OccuredAt));
             w.WriteElementString("transactionNum", TransactionId.ToString(CultureInfo.InvariantCulture));
-            w.WriteElementString("username", UserId);
-            w.WriteElementString("server", Server);
+            if (!String.IsNullOrWhiteSpace(UserId))
+            {
+                w.WriteElementString("username", UserId);
+            }
+
+            if (!String.IsNullOrWhiteSpace(Server))
+            {
+                w.WriteElementString("server", Server);
+            }
         }
 
         // The XML log file requires milliseconds since epoch as time string
@@ -47,11 +54,11 @@ namespace TransactionEvents
             w.WriteStartElement("userCommand");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            if (StockSymbol != null)
+            if (!String.IsNullOrWhiteSpace(StockSymbol))
             {
                 w.WriteElementString("stockSymbol", StockSymbol);
             }
-            if (Funds != null)
+            if (Funds.HasValue)
             {
                 w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
@@ -107,7 +114,7 @@ namespace TransactionEvents
             w.WriteStartElement("systemEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            if (StockSymbol != null)
+            if (!String.IsNullOrWhiteSpace(StockSymbol))
             {
                 w.WriteElementString("stockSymbol", StockSymbol);
             }
@@ -115,7 +122,7 @@ namespace TransactionEvents
             {
                 w.WriteElementString("funds", Funds.Value.ToString("F2")); 
             }
-            if (FileName != null)
+            if (!String.IsNullOrWhiteSpace(FileName))
             {
                 w.WriteElementString("filename", FileName);
             }
@@ -137,7 +144,7 @@ namespace TransactionEvents
             w.WriteStartElement("errorEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            if (StockSymbol != null)
+            if (!String.IsNullOrWhiteSpace(StockSymbol))
             {
                 w.WriteElementString("stockSymbol", StockSymbol);
             }
@@ -145,11 +152,11 @@ namespace TransactionEvents
             {
                 w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
-            if (FileName != null)
+            if (!String.IsNullOrWhiteSpace(FileName))
             {
                 w.WriteElementString("filename", FileName);
             }
-            if (ErrorMessage != null)
+            if (!String.IsNullOrWhiteSpace(ErrorMessage))
             {
                 w.WriteElementString("errorMessage", ErrorMessage);
             }
@@ -171,7 +178,7 @@ namespace TransactionEvents
             w.WriteStartElement("debugEvent");
             WriteCommonPropertyXml(w);
             w.WriteElementString("command", Command.ToString());
-            if (StockSymbol != null)
+            if (!String.IsNullOrWhiteSpace(StockSymbol))
             {
                 w.WriteElementString("stockSymbol", StockSymbol);
             }
@@ -179,11 +186,11 @@ namespace TransactionEvents
             {
                 w.WriteElementString("funds", Funds.Value.ToString("F2"));
             }
-            if (FileName != null)
+            if (!String.IsNullOrWhiteSpace(FileName))
             {
                 w.WriteElementString("filename", FileName);
             }
-            if (DebugMessage != null)
+            if (!String.IsNullOrWhiteSpace(DebugMessage))
             {
                 w.WriteElementString("debugMessage", DebugMessage);
             }
