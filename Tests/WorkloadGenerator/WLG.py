@@ -4,6 +4,7 @@ import pika
 import json
 import Queue
 import urllib2
+import random
 
 parser = argparse.ArgumentParser(description='Workload Generator for Distributed System')
 parser.add_argument('--filename', nargs='?')
@@ -35,8 +36,8 @@ if args.filename:
 	filename = args.filename
 else:
 	filename = raw_input("Workload File: ")
-if args.hostname:
-	hostname = args.hostname
+#if args.hostname:
+	#hostname = args.hostname
 if args.port:
 	port = args.port
 if args.slaves:
@@ -50,10 +51,14 @@ if args.nhost:
 if args.rport:
 	nannyPort = args.nport
 
+hostname = ["b137.seng.uvic.ca", "b153.seng.uvic.ca"]
 
-url = "http://" + hostname
+urls = dict()
+urls[0] = "http://" + hostname[0]
+urls[1] = "http://" + hostname[1]
 if port:
-	url = url + ":" + port
+	urls[0] = url[0] + ":" + port
+	urls[1] = url[1] + ":" + port
 
 credentials = pika.PlainCredentials('dts_user', 'Group1')
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, int(rabbitPort), '/', credentials))
@@ -111,78 +116,78 @@ def encode_Command(obj):
     return obj
 
 def getAddCommand(User, Amount, Id):
-	uri = url + "/api/users/" + User
+	uri = urls[random.randint(0,1)] + "/api/users/" + User
 	json_string = '{ "Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getQuoteCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/" + User + "/stocks/quote/" + StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/" + User + "/stocks/quote/" + StockSymbol
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getBuyCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-purchases"
 	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : "' + Amount + '"" }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases/commit"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-purchases/commit"
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelBuyCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-purchases"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-purchases"
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSellCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/pending-sales"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-sales"
 	json_string = '{"Symbol" : "' + StockSymbol + '", "Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "POST", 200)
 
 def getCommitSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales/commit"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-sales/commit"
 	return ApiCommand(uri, "", Id, "POST", 200)
 
 def getCancelSellCommand(User, Id):
-	uri = url + "/api/users/"+User+"/pending-sales"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/pending-sales"
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	json_string = '{"Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetBuyCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getSetBuyTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/buy-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/buy-triggers/"+StockSymbol
 	json_string = '{"Price" : "' + Price + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellAmountCommand(User, StockSymbol, Amount, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	json_string = '{"Amount" : "' + Amount + '" }'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getSetSellTriggerCommand(User, StockSymbol, Price, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	json_string = '{"Price" : "' + Price + '"}'
 	return ApiCommand(uri, json_string, Id, "PUT", 200)
 
 def getCancelSetSellCommand(User, StockSymbol, Id):
-	uri = url + "/api/users/"+User+"/sell-triggers/"+StockSymbol
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/sell-triggers/"+StockSymbol
 	return ApiCommand(uri, "", Id, "DELETE", 200)
 
 def getDumplogUserCommand(User,Id):
-	uri = url + "/api/users/"+User+"/transactions"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/transactions"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDumplogCommand(Id):
-	uri = url + "/api/users/transactions"
+	uri = urls[random.randint(0,1)] + "/api/users/transactions"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 def getDisplaySummaryCommand(User, Id):
-	uri = url + "/api/users/"+User+"/summary"
+	uri = urls[random.randint(0,1)] + "/api/users/"+User+"/summary"
 	return ApiCommand(uri, "", Id, "GET", 200)
 
 #Open File
