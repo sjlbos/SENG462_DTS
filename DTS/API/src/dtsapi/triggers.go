@@ -146,12 +146,12 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 		}
 
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "buy")
+		defer getPendingTriggerRows.Close()
 		if err != nil{
 			//error
 			writeResponse(w, http.StatusBadRequest, "getPendingTriggerId: " + err.Error())
 			return
 		}
-		defer getPendingTriggerRows.Close()
 
 		var id int
 		found = false
@@ -336,12 +336,12 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 		}
 
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "sell")
+		defer getPendingTriggerRows.Close()
 		if err != nil{
 			//error
 			writeResponse(w, http.StatusBadRequest, "getPendingTriggerId: " + err.Error())
 			return
 		}
-		defer getPendingTriggerRows.Close()
 
 		var id int
 		found = false
@@ -423,11 +423,11 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 	}
 	var id int
 	getBuyTriggerIdRows, err := db.Query(getBuyTriggerId, uid, Symbol)
+	defer getBuyTriggerIdRows.Close()
 	if err != nil{
 		//error
 		return;
 	}
-	defer getBuyTriggerIdRows.Close()
 	found = false
 	for getBuyTriggerIdRows.Next() {
 		found = true
@@ -486,11 +486,11 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
 
 	var id int
 	getSellTriggerIdRows, err := db.Query(getSellTriggerId, uid, Symbol)
+	defer getSellTriggerIdRows.Close()
 	if err != nil{
 		//error
 		return
 	}
-	defer getSellTriggerIdRows.Close()
 	found = false
 
 	for getSellTriggerIdRows.Next() {
@@ -575,11 +575,11 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 
 	//Get Trigger Information
 	rows, err := db.Query(getTriggerById, t.TriggerId)
+	defer rows.Close()
 	if err != nil {
 		//error
 		return
 	}
-	defer rows.Close()
 
 	var id int
 	var stock string
@@ -674,11 +674,11 @@ func PerformBuyTrigger(w http.ResponseWriter, r *http.Request){
 
 	//Get Trigger Information
 	rows, err := db.Query(getTriggerById, t.TriggerId)
+	defer rows.Close()
 	if err != nil {
 		//error
 		return
 	}
-	defer rows.Close()
 
 	var id int 
 	var stock string

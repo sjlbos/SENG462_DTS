@@ -235,6 +235,10 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 	//find last sell
 	LatestPendingrows, err := db.Query(getLatestPendingSale, uid)
 	defer LatestPendingrows.Close()
+	if err != nil {
+		//error
+		return
+	}
 	var id int
 	var stock string
 	var num_shares int

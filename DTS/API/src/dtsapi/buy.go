@@ -240,12 +240,12 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 	}
 
 	LatestPendingrows, err := db.Query(getLatestPendingPurchase, uid)
+	defer LatestPendingrows.Close()
 	if err != nil{
 		//error
 		writeResponse(w, http.StatusBadRequest, "LatestPendingRows: " + err.Error())
 		return
 	}
-	defer LatestPendingrows.Close()
 
 	var id int
 	var stock string
