@@ -9,7 +9,6 @@ import (
 
 func Logger(inner http.Handler, name string) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        println("Starting Request")
         start := time.Now()
 
         inner.ServeHTTP(w, r)
@@ -20,6 +19,5 @@ func Logger(inner http.Handler, name string) http.Handler {
 		name,
 		time.Since(start),
         )
-        println("Finished Request\n")
     })
 }

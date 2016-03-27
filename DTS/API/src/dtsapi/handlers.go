@@ -135,8 +135,8 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	
 	_, err = qconn.Write([]byte(strEcho))
 	if err != nil {
-		println("Write to server failed:", err.Error())
-		os.Exit(1)
+		println("Write to server Error:", err.Error())
+		return "-1"
 	}
 
 	reply := make([]byte, 100)
