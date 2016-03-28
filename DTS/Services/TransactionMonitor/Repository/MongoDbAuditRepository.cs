@@ -43,6 +43,7 @@ namespace TransactionMonitor.Repository
 
         public void LogTransactionEvent(TransactionEvent transactionEvent)
         {
+            transactionEvent.LoggedAt = DateTime.UtcNow;
             _eventCollection.InsertOne(transactionEvent);
         }
 
