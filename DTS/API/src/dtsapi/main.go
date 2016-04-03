@@ -5,6 +5,7 @@ import (
     "net/http"
     "net"
     "github.com/streadway/amqp"
+    "github.com/rs/cors"
     _ "github.com/lib/pq"
     "flag"
     "database/sql"
@@ -144,5 +145,16 @@ func main() {
     failOnError(err, "Failed to declare an exchange")
 
     RouterPort := ":" + port
-    log.Fatal(http.ListenAndServe(RouterPort, router))
+
+	c := cors.New(cors.Options{
+	    AllowedOrigins: []string{"*"},
+	    AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+	    AllowCredentials: true,
+	    Debug : false,
+	})
+
+	// Insert the middleware
+	handler := c.Handler(router)
+
+    log.Fatal(http.ListenAndServe(RouterPort, handler))
 }
