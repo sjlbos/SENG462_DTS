@@ -47,6 +47,7 @@ var getPendingTriggerId string = "SELECT * FROM \"get_pending_trigger_id_for_use
 var getTriggerById string = "SELECT * FROM \"get_trigger_by_id\"($1)"
 var performBuyTrigger string = "SELECT * FROM \"perform_buy_trigger\"($1, $2::money)"
 var performSellTrigger string = "SELECT * FROM \"perform_sell_trigger\"($1, $2::money)"
+var getAllTriggers string = "SELECT * FROM \"get_all_triggers_for_uid\"($1::int)"
 
 
 var Hostname string

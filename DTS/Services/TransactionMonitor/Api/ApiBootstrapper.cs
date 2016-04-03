@@ -60,6 +60,12 @@ namespace TransactionMonitor.Api
                 context.Request.Url.Query, 
                 context.Response.StatusCode,
                 context.Response.ReasonPhrase);
+
+            // Enable CORS
+            pipelines.AfterRequest.AddItemToEndOfPipeline((context) => context.Response
+                .WithHeader("Access-Control-Allow-Origin", "*")
+                .WithHeader("Access-Control-Allow-Methods", "GET")
+                .WithHeader("Access-Control-Allow-Headers", "Accept, Origin, Content-type"));
         }
     }
 }

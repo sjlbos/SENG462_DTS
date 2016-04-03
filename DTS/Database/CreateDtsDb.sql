@@ -294,6 +294,20 @@ $$
 $$
 LANGUAGE SQL VOLATILE;
 
+CREATE OR REPLACE FUNCTION get_all_triggers_for_uid(_uid int)
+RETURNS TABLE (	id int, 
+		uid int,
+		stock varchar, 
+		type trigger_type, 
+		trigger_price money, 
+		num_shares int, 
+		created_at timestamptz) AS
+$$
+	SELECT id, uid, stock, type, trigger_price, num_shares, created_at
+	FROM triggers
+	WHERE uid = _uid
+$$
+LANGUAGE SQL VOLATILE;
 
 
 CREATE OR REPLACE FUNCTION get_user_buy_triggers(_uid int)

@@ -13,9 +13,7 @@ namespace TransactionMonitor
     public class TransactionMonitorService : WorkerHost
     {
         private int _workerCount;
-        private string _dbConnectionString;
         private Uri _apiEndpoint;
-        private string _eventCollectionName;
 
         private IAuditRepository _repository;
 
