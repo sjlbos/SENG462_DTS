@@ -268,6 +268,7 @@ func handleConnection(conn net.Conn){
 
 		}
 		cryptoKey := stripCtlAndExtFromUTF8(ParsedQuoteReturn[4])
+		cryptoKey = strings.TrimSpace(cryptoKey)
 
 		if ReturnUserId != APIUserId {
 			// system error
