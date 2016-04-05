@@ -45,7 +45,7 @@ rm -f nginx-$NGINX_VERSION.tar.gz
 
 # Build and install
 cd $SOURCE_DIR
-./configure --prefix=$INSTALL_DIR --without-http_rewrite_module --with-openssl=$OPENSSL_PATH --with-threads --with-file-aio
+./configure --prefix=$INSTALL_DIR --without-http_rewrite_module --with-http_ssl_module --with-openssl=$OPENSSL_PATH --with-threads --with-file-aio
 make
 make install
 
