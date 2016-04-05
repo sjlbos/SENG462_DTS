@@ -11,8 +11,7 @@ $('#goButton').click(function() {
 	        url: url,
 	        data: { },
 	        success: function(response) {
-	            alert(response)
-	            location.reload();
+	            $("#ResponsePlane").html(response);
 	        },
 	        error: function(response) {
 	            console.log("ajax failed");
