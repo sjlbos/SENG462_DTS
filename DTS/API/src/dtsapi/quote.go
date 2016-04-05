@@ -41,7 +41,7 @@ func Quote(w http.ResponseWriter, r *http.Request){
 
 	//Get Stock Price
 	var strPrice string
-	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+	strPrice, _ = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
 
 	//Verify Return Price
 	var price decimal.Decimal

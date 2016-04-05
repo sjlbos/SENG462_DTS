@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
 	//"fmt"
+	"strings"
+	"strconv"
 )
 
 func Buy(w http.ResponseWriter, r *http.Request){
@@ -15,6 +17,15 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		Amount string
 		Symbol string
 	}
+
+	type return_struct struct {
+		Error bool
+		SaleId int
+		Price string
+		NumShares int64
+		Expiration time.Duration
+	}
+
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	TransId := r.Header.Get("X-TransNo")
@@ -70,7 +81,8 @@ func Buy(w http.ResponseWriter, r *http.Request){
 
 	//Get and Validate Quote
 	var strPrice string
-	strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
+	var strExpiration string
+	strPrice, strExpiration = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil {
@@ -78,7 +90,14 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
-		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number: " + quotePrice.String())
+		return
+	}
+
+	//Verify Expiration Time
+	ExpirationTime, err := time.Parse("2006-01-02 15:04:05 -0700 MST", strExpiration)
+	if err != nil{
+		writeResponse(w, http.StatusOK, "Expiration Conversion Error")
 		return
 	}
 
@@ -90,23 +109,37 @@ func Buy(w http.ResponseWriter, r *http.Request){
 	}
 
 	//Calculate Stock To Buy
-	toBuy := (AmountDec.Div(quotePrice)).Floor()
+	toBuy := (AmountDec.Div(quotePrice)).IntPart()
 	
 	//Validate Buy Amount
-	if(toBuy.Cmp(zero) != 1){
-	    writeResponse(w, http.StatusBadRequest, "Cannot Buy " + toBuy.String() + " stock")
+	if(toBuy < 1){
+	    writeResponse(w, http.StatusBadRequest, "Cannot Buy less than 1 stock")
 	    return
 	}
 
+	strBuy := strconv.Itoa(int(toBuy))
+
 	//Add Pending Purchase for Amount
-	_, err = db.Exec(addPendingPurchase, uid, t.Symbol, toBuy.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
+	var PurchaseId int
+	rows, err := db.Query(addPendingPurchase, uid, t.Symbol, strBuy, strPrice, time.Now(), ExpirationTime)
+	defer rows.Close()
 	if(err != nil){
 		writeResponse(w, http.StatusInternalServerError, "Failed to Create Purchase")
 	    return
 	}
+	rows.Next()
+	err = rows.Scan(&PurchaseId)
+	if err != nil{
+		writeResponse(w, http.StatusBadRequest, "Sale Id Request Failed")
+	    return
+	}
+	TimeToExpiration := (ExpirationTime.Sub(time.Now()))/time.Millisecond
+	//Build Response
+	rtnStruct := return_struct{false, PurchaseId, strPrice, toBuy, TimeToExpiration} 
+	strRtnStruct, err := json.Marshal(rtnStruct)
 
 	//success
-	writeResponse(w, http.StatusOK, "Purchase Request has been Created")
+	writeResponse(w, http.StatusOK, string(strRtnStruct))
 	return
 }
 
@@ -151,7 +184,6 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	//
 	var id int
 	var stock string
 	var num_shares int
@@ -257,4 +289,91 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 	//Success
 	writeResponse(w, http.StatusOK, "Purchase Request has been Cancelled")
 	return 
+}
+
+func UpdatePurchase(w http.ResponseWriter, r *http.Request){
+	zero,_ := decimal.NewFromString("0");
+	vars := mux.Vars(r)
+	UserId := vars["id"]
+	TransId := vars["PurchaseId"]
+
+
+	//get User Account Information
+	db, uid, found, _ := getDatabaseUserId(UserId) 
+	if(found == false){
+		writeResponse(w, http.StatusOK, "User Account Does Not Exist")
+		return
+	}
+
+	Guid := getNewGuid()
+	//Find last Sell Command
+	LatestPendingrows, err := db.Query(getLatestPendingSale, uid)
+	defer LatestPendingrows.Close()
+	if err != nil{
+		writeResponse(w, http.StatusOK, "Error Getting Last Sale: " + err.Error())
+		return
+	}
+
+	var id string
+	var stock string
+	var num_shares int
+	var share_price string
+	var requested_at time.Time 
+	var expires_at time.Time   
+	found = false
+	for LatestPendingrows.Next() {
+		found = true
+		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
+	}
+	if(found == false){
+		writeResponse(w, http.StatusOK, "No Recent Sell Commands")  
+		return               
+	}
+
+	strOldPrice := strings.TrimPrefix(share_price, "$")
+	strOldPrice = strings.Replace(strOldPrice, ",", "", -1)
+	OldPrice, err := decimal.NewFromString(strOldPrice)
+	if err != nil{
+		writeResponse(w, http.StatusBadRequest, err.Error() + strOldPrice)
+		return;
+	}
+
+	//Get and Verify Quote
+	var strPrice string
+	strPrice, _ = getStockPrice(TransId ,"true", UserId, stock, Guid.String())
+	var quotePrice decimal.Decimal
+	quotePrice, err = decimal.NewFromString(strPrice)
+	if err != nil{
+		writeResponse(w, http.StatusBadRequest, err.Error())
+		return;
+	}
+	if(quotePrice.Cmp(zero) != 1){
+	    writeResponse(w, http.StatusBadRequest, "Quote is not a valid number")
+	    return
+	}
+
+	totalAmount := decimal.New(int64(num_shares),0).Mul(OldPrice)
+	newShareNum := totalAmount.Div(quotePrice).Floor()
+	diffPrice := totalAmount.Sub( newShareNum.Mul(quotePrice) )
+
+	type return_struct struct {
+		Error bool
+		SaleId string
+		Price string
+		NumShares int64
+		Expiration time.Duration
+	}
+	//Build Response
+	rtnStruct := return_struct{false, id, strPrice, newShareNum.IntPart(), -1} 
+	strRtnStruct, err := json.Marshal(rtnStruct)
+
+
+	_, err = db.Exec(updatePurchase, TransId, int(newShareNum.IntPart()), strPrice, int(diffPrice.IntPart()), time.Now().Add(time.Duration(60)*time.Second))
+	if err != nil{
+	    writeResponse(w, http.StatusBadRequest, err.Error() + string(strRtnStruct))
+	    return
+	}
+			
+	writeResponse(w, http.StatusOK, string(strRtnStruct))  
+	return
 }

@@ -104,9 +104,15 @@ var routes = Routes{
     	PerformSellTrigger,
     },
     Route{
-    	"DisplaySummary",
-    	"GET",
-    	"/api/users/{id}/summary",
-    	DisplaySummary,
+        "UpdateSale",
+        "PUT",
+        "/api/users/{id}/pending-sales/{SaleId}",
+        UpdateSale,
+    },
+    Route{
+        "UpdatePurchase",
+        "PUT",
+        "/api/users/{id}/pending-purchases/{PurchaseId}",
+        UpdatePurchase,
     },
 }

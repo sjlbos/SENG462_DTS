@@ -117,7 +117,7 @@ type TriggerEvent struct{
     UpdatedAt       time.Time
 }
 
-func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
+func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) (string, string) {
     //Format Request String
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
 
@@ -125,27 +125,32 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 	addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
     if err != nil {
         println("addr Error: " + err.Error())
-        return "-1"
+        return "-1", time.Now().String()
     }
 	qconn, err := net.DialTCP("tcp", nil, addr)
 	if err != nil {
 		//error
 		println("Error Connecting to Quote Cache: " + err.Error())
-		return "-1"
+		return "-1", time.Now().String()
 	}
 	
     //Write Request String
 	_, err = qconn.Write([]byte(strEcho))
 	if err != nil {
 		println("Write to server Error:", err.Error())
-		return "-1"
+		return "-1", time.Now().String()
 	}
 
     //Create Reply
 	reply := make([]byte, 100)
 	_, err = qconn.Read(reply)
 	reply = bytes.Trim(reply, "\x00")
-	return string(reply)
+
+    //Seperate Price and Expiration
+    strReply := string(reply)
+    ParsedQuoteReturn := strings.Split(strReply,",")
+
+	return ParsedQuoteReturn[0], ParsedQuoteReturn[1]
 }
 
 func writeResponse(w http.ResponseWriter, responseCode int, response string){

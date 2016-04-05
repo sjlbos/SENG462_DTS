@@ -1,15 +1,11 @@
 {
-        "RabbitHost"     : "B134.seng.uvic.ca",
-        "RabbitPort"     : "44410",
-        "HostPort"       : "44410",
-        "QuoteRunnerHost" : "B143.seng.uvic.ca",
-        "QuoteRunnerPort" : "44410",
+        "RabbitHost"     : "localhost",
+        "RabbitPort"     : "5672",
+        "HostPort"       : "44419",
+        "QuoteRunnerHost" : "localhost",
+        "QuoteRunnerPort" : "44411",
         "DBConnectionString" :  [
-		"host=B133.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
-		"host=B142.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
-		"host=B144.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
-                "host=B145.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
-                "host=B146.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable"
+		"host=localhost user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable"
         ]
 }
 

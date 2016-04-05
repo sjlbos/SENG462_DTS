@@ -492,7 +492,7 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 
 	//Get A Quote
 	var strPrice string
-	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+	strPrice,_ = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil {
@@ -591,7 +591,7 @@ func PerformBuyTrigger(w http.ResponseWriter, r *http.Request){
 
 	//Get A Quote
 	var strPrice string
-	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
+	strPrice,_ = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil {

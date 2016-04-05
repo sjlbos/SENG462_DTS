@@ -959,3 +959,71 @@ $$
 LANGUAGE SQL VOLATILE;
 
 
+CREATE OR REPLACE FUNCTION update_pending_sale(
+	_id int,
+	_new_num_shares int,
+	_new_price money,
+	_diff_shares int,
+	_expires_at timestamptz
+)
+RETURNS void AS
+$$
+DECLARE
+	_user_id int;
+	_stock varchar;
+BEGIN
+	UPDATE pending_transactions
+	SET num_shares = _new_num_shares
+	WHERE id = _id
+	RETURNING uid INTO _user_id;
+
+	UPDATE pending_transactions
+	SET share_price = _new_price
+	WHERE id = _id
+	RETURNING stock INTO _stock;
+
+	UPDATE pending_transactions
+	SET expires_at = _expires_at
+	WHERE id = _id;
+
+	UPDATE portfolios
+	SET num_shares = num_shares + _diff_shares
+	WHERE uid = _user_id
+	AND stock = _stock;
+END;
+$$
+LANGUAGE 'plpgsql' VOLATILE;
+
+CREATE OR REPLACE FUNCTION update_pending_purchase(
+	_id int,
+	_new_num_shares int,
+	_new_price money,
+	_diff_price money,
+	_expires_at timestamptz
+)
+RETURNS void AS
+$$
+DECLARE
+	_user_id int;
+	_stock varchar;
+BEGIN
+	UPDATE pending_transactions
+	SET num_shares = _new_num_shares
+	WHERE id = _id
+	RETURNING uid INTO _user_id;
+
+	UPDATE pending_transactions
+	SET share_price = _new_price
+	WHERE id = _id
+	RETURNING stock INTO _stock;
+
+	UPDATE pending_transactions
+	SET expires_at = _expires_at
+	WHERE id = _id;
+
+	UPDATE users
+	SET balance = balance + _diff_price
+	WHERE id = _user_id;
+END;
+$$
+LANGUAGE 'plpgsql' VOLATILE;

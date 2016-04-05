@@ -3,11 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	//"strings"
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
-	//"fmt"
 )
 
 func Add(w http.ResponseWriter, r *http.Request){
@@ -15,6 +13,12 @@ func Add(w http.ResponseWriter, r *http.Request){
 
 	type add_struct struct {
 		Amount string
+	}
+
+	type return_struct struct {
+		Error bool
+		Amount string
+		UserId string
 	}
 	vars := mux.Vars(r)
 	UserId := vars["id"]
@@ -67,7 +71,11 @@ func Add(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	//Build Response
+	rtnStruct := return_struct{false, t.Amount, UserId} 
+	strRtnStruct, err := json.Marshal(rtnStruct)
+
 	//Success
-	writeResponse(w, http.StatusOK, "Account Updated with Funds")
+	writeResponse(w, http.StatusOK, string(strRtnStruct))
 	return
 }

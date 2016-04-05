@@ -58,7 +58,7 @@ func DisplaySummary(w http.ResponseWriter, r *http.Request){
 		if err !=nil {
 			return
 		}
-		fmt.Fprintln(w, stock + num_shares)
+		fmt.Fprintln(w, stock + " " + num_shares)
 	}
 
 	fmt.Fprintln(w, "")
@@ -79,7 +79,7 @@ func DisplaySummary(w http.ResponseWriter, r *http.Request){
 		if err != nil{
 			return
 		}
-		fmt.Fprintln(w, id + uidStr + stock + trigger_type + price + num_shares + created_time.String())
+		fmt.Fprintln(w, id + " " + uidStr + " " + stock + " " + trigger_type + " " + price + " " + num_shares + " " + created_time.String())
 	}
 	return
 }

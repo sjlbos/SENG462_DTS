@@ -24,3 +24,5 @@ var performBuyTrigger string = "SELECT * FROM \"perform_buy_trigger\"($1, $2::mo
 var performSellTrigger string = "SELECT * FROM \"perform_sell_trigger\"($1, $2::money)"
 var getAllTriggers string = "SELECT * FROM \"get_all_triggers_for_uid\"($1::int)"
 var getAllStocks string = "SELECT * FROM \"get_user_portfolio\"($1::int)"
+var updateSale string = "SELECT * FROM \"update_pending_sale\"($1::int, $2::int, $3::money, $4::int, $5::timestamptz)"
+var updatePurchase string = "SELECT * FROM \"update_pending_purchase\"($1::int, $2::int, $3::money, $4::money, $5::timestamptz)"

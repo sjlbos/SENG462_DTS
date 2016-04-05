@@ -206,7 +206,7 @@ func handleConnection(conn net.Conn){
 	QuoteItem, found = memCache[stockSymbol]
 	if found {
 		if QuoteItem.Expiration.After(time.Now()){
-			fmt.Fprintf(conn, string(QuoteItem.Value))
+			fmt.Fprintf(conn, string(QuoteItem.Value) + "," + QuoteItem.Expiration.String())
 			conn.Close()
 			hit = hit + 1
 			return
@@ -251,14 +251,17 @@ func handleConnection(conn net.Conn){
 
 
 		QuoteReturn := <-messages
-
 		ParsedQuoteReturn := strings.Split(QuoteReturn,",")
 		price, err = decimal.NewFromString(ParsedQuoteReturn[0])
 		if err != nil{
 			//error
-
+			println("ERROR PARSING")
 		}
-		_, err = conn.Write([]byte(price.String()))
+
+		backoff := 50 + rand.Intn(5)
+		QuoteExpiration := time.Now().Add(time.Duration(backoff)*time.Second)
+		
+		_, err = conn.Write([]byte(price.String() + "," + QuoteExpiration.String()))
 		conn.Close()
 		stockSymbol = ParsedQuoteReturn[1]
 		ReturnUserId := ParsedQuoteReturn[2]
@@ -290,10 +293,9 @@ func handleConnection(conn net.Conn){
 		}
 		SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
 
-		backoff := 50 + rand.Intn(5)
 
 		tmpQuoteItem := QuoteCacheItem{
-			Expiration : time.Now().Add(time.Duration(backoff)*time.Second),
+			Expiration : QuoteExpiration,
 			Value : price.String(),
 		}
 		memCache[stockSymbol] = tmpQuoteItem
