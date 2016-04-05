@@ -7,7 +7,6 @@ import (
     "strings"
     "github.com/gorilla/mux"
     "github.com/shopspring/decimal"
-    "fmt" 
 )
 
 func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
@@ -46,8 +45,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
-		//error
-		writeResponse(w, http.StatusBadRequest, "Request Body Is Invalid")
+		writeResponse(w, http.StatusOK, "Request Body Is Invalid")
 		return
 	}
 
@@ -66,19 +64,20 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 	
+		//Validate Request Body
 		if err != nil {
-			//error
 			writeResponse(w, http.StatusBadRequest, "Request Body Is Invalid")
 			return
 		}
 
+		//Get User and Database Information
 		db, uid, found, _ := getDatabaseUserId(UserId)
 		if !found {
-			//error
 			writeResponse(w, http.StatusOK, "User Account Does Not Exist")
 			return
 		}
 
+		//Validate Amount
 		_, err := decimal.NewFromString(t.Amount)
 		if err != nil{
 			//error
@@ -86,27 +85,13 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			return
 		}
 
+		//Create Buy Trigger
 		_, err = db.Exec(addBuyTrigger, uid, Symbol, t.Amount, time.Now())
 		if err != nil{
-			Error := ErrorEvent{
-				EventType       : "ErrorEvent",
-				Guid            : Guid.String(),
-				OccuredAt       : time.Now(),
-				TransactionId   : TransId,
-				UserId          : UserId,
-				Service         : "API",
-				Server          : Hostname,
-				Command         : "BUY",
-				StockSymbol     : Symbol,
-				Funds           : t.Amount,
-				FileName        : "",
-				ErrorMessage    : "Unable to Create Buy Trigger",   
-			}
-			SendRabbitMessage(Error,Error.EventType)
-			//error
 			writeResponse(w, http.StatusBadRequest, "addBuyTrigger: " + err.Error())
 			return
 		}
+
 		//success
 		writeResponse(w, http.StatusOK, "Buy Trigger Created")
 		return
@@ -125,67 +110,54 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	
+		//Validate Request Body
 		if err != nil {
-			//error
 			writeResponse(w, http.StatusBadRequest, "Request Body Is Invalid")
 			return
 		}
 
+		//Get User and Database Information
 		db, uid, found, _ := getDatabaseUserId(UserId)
 		if !found {
-			//error
 			writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 			return
 		}
 
-		AmountDec, err := decimal.NewFromString(t.Price)
+		//Validate Price
+		_, err := decimal.NewFromString(t.Price)
 		if err != nil{
-			//error
 			writeResponse(w, http.StatusBadRequest, "Amount Is Not A Valid Number")
 			return
 		}
 
+		//Get Created Trigger
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "buy")
 		defer getPendingTriggerRows.Close()
 		if err != nil{
-			//error
 			writeResponse(w, http.StatusBadRequest, "getPendingTriggerId: " + err.Error())
 			return
 		}
 
+		//Get Trigger Info
 		var id int
 		found = false
-
 		for getPendingTriggerRows.Next() {
 			found = true
 			err = getPendingTriggerRows.Scan(&id)
 		} 
 		if !found {
-			Error := ErrorEvent{
-				EventType       : "ErrorEvent",
-				Guid            : Guid.String(),
-				OccuredAt       : time.Now(),
-				TransactionId   : TransId,
-				UserId          : UserId,
-				Service         : "API",
-				Server          : Hostname,
-				Command         : "CANCEL_BUY",
-				StockSymbol     : Symbol,
-				Funds           : AmountDec.String(),
-				FileName        : "",
-				ErrorMessage    : "No recent SET_BUY_AMOUNT commands issued",   
-			}
-			SendRabbitMessage(Error,Error.EventType)    
-			//error
 			writeResponse(w, http.StatusBadRequest, "No Recent SET_BUY_AMOUNT commands issued")
 			return               
 		}
+
+		//Create Buy Trigger
 		_, err = db.Exec(setBuyTrigger, id, uid, t.Price, time.Now())
 		if err != nil {
 			writeResponse(w, http.StatusBadRequest, "Unable to set Buy triggger: " + err.Error())
-			//error
 			return
 		}
+
+		//Send Trigger Message
 		Trigger := TriggerEvent{
 			TriggerType     : "buy",
 			UserId          : UserId,
@@ -193,6 +165,7 @@ func CreateBuyTrigger(w http.ResponseWriter, r *http.Request){
 			UpdatedAt       : time.Now(),
 		}
 		SendRabbitMessage(Trigger, "buy")
+
 		//success
 		writeResponse(w, http.StatusOK, "Buy Trigger Set")
 		return
@@ -235,7 +208,6 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			Funds           : "",
 		}
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
-		//error
 		writeResponse(w, http.StatusBadRequest, "Invalid Request Body")
 		return
 	}
@@ -257,46 +229,28 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	
 		if err != nil {
-			//error
 			writeResponse(w, http.StatusBadRequest, "Invalid Request Body")
 			return
 		}
 
 		db, uid, found, _ := getDatabaseUserId(UserId)
 		if !found {
-			//error
 			writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 			return
 		}
 
 		_, err := decimal.NewFromString(t.Amount)
 		if err != nil{
-			//error
 			writeResponse(w, http.StatusBadRequest, "Amount Is Not A Valid Number")
 			return
 		}
 
 		_, err = db.Exec(addSellTrigger, uid, Symbol, t.Amount, time.Now())
 		if err != nil{
-			Error := ErrorEvent{
-				EventType       : "ErrorEvent",
-				Guid            : Guid.String(),
-				OccuredAt       : time.Now(),
-				TransactionId   : TransId,
-				UserId          : UserId,
-				Service         : "API",
-				Server          : Hostname,
-				Command         : "BUY",
-				StockSymbol     : Symbol,
-				Funds           : t.Amount,
-				FileName        : "",
-				ErrorMessage    : "Unable to Create Buy Trigger",   
-			}
-			SendRabbitMessage(Error,Error.EventType)
-			//error
 			writeResponse(w, http.StatusBadRequest, "addSellTrigger: " + err.Error())
 			return
 		}
+
 		//success
 		writeResponse(w, http.StatusOK, "Sell Trigger Created")
 		return	
@@ -316,21 +270,18 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 		SendRabbitMessage(CommandEvent,CommandEvent.EventType)
 	
 		if err != nil {
-			//error
 			writeResponse(w, http.StatusBadRequest, "Invalid Request Body")
 			return
 		}
 
 		db, uid, found, _ := getDatabaseUserId(UserId)
 		if !found {
-			//error
 			writeResponse(w, http.StatusBadRequest, "User Account Not Found")
 			return
 		}
 
 		_, err := decimal.NewFromString(t.Price)
 		if err != nil{
-			//error
 			writeResponse(w, http.StatusBadRequest, "Price Is Not A Valid Number")
 			return
 		}
@@ -338,7 +289,6 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 		getPendingTriggerRows, err := db.Query(getPendingTriggerId, uid, Symbol, "sell")
 		defer getPendingTriggerRows.Close()
 		if err != nil{
-			//error
 			writeResponse(w, http.StatusBadRequest, "getPendingTriggerId: " + err.Error())
 			return
 		}
@@ -350,31 +300,17 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			err = getPendingTriggerRows.Scan(&id)
 		} 
 		if(found == false){
-			Error := ErrorEvent{
-				EventType       : "ErrorEvent",
-				Guid            : Guid.String(),
-				OccuredAt       : time.Now(),
-				TransactionId   : TransId,
-				UserId          : UserId,
-				Service         : "API",
-				Server          : Hostname,
-				Command         : "CANCEL_BUY",
-				StockSymbol     : Symbol,
-				Funds           : t.Amount,
-				FileName        : "",
-				ErrorMessage    : "No recent SET_SELL_AMOUNT commands issued",   
-			}
-			SendRabbitMessage(Error,Error.EventType)     
-			//error
 			writeResponse(w, http.StatusBadRequest, "No recent SET_SELL_AMOUNT commands Issued")
 			return             
 		}
+
 		_, err = db.Exec(setSellTrigger, id, uid, t.Price, time.Now())
 		if err != nil {
-			//error
 			writeResponse(w, http.StatusBadRequest, "setSellTrigger: " + err.Error())
 			return
 		}
+
+		//Send Trigger Message
 		Trigger := TriggerEvent{
 			TriggerType     : "sell",
 			UserId          : UserId,
@@ -382,6 +318,7 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 			UpdatedAt       : time.Now(),
 		}
 		SendRabbitMessage(Trigger, "sell")
+
 		//success
 		writeResponse(w, http.StatusOK, "Sell Trigger Set")
 		return
@@ -389,7 +326,6 @@ func CreateSellTrigger(w http.ResponseWriter, r *http.Request){
 }
 
 func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintln(w, "Cancelling Buy Trigger");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	Symbol := vars["symbol"]    
@@ -415,17 +351,19 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	
+	//Get User and Database Information
 	db , uid, found, _ := getDatabaseUserId(UserId)
-
 	if !found {
-		//error
+		writeResponse(w, http.StatusOK, "User Does Not Exist")
 		return
 	}
+
+	//Get Buy Trigger to Cancel
 	var id int
 	getBuyTriggerIdRows, err := db.Query(getBuyTriggerId, uid, Symbol)
 	defer getBuyTriggerIdRows.Close()
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Failed To Get Trigger: " + err.Error())
 		return;
 	}
 	found = false
@@ -433,11 +371,15 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 		found = true
 		err = getBuyTriggerIdRows.Scan(&id)
 	}
+
+	//Cancel Buy Trigger
 	_, err = db.Exec(cancelBuyTrigger, id)
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Failed To Cancel: " + err.Error())
 		return
 	}
+
+	//Send Trigger Event
 	Trigger := TriggerEvent{
 		TriggerType     : "buy",
 		UserId          : UserId,
@@ -445,13 +387,13 @@ func CancelBuyTrigger(w http.ResponseWriter, r *http.Request){
 		UpdatedAt       : time.Now(),
 	}
 	SendRabbitMessage(Trigger, "buy")
+
 	//success
-	//writeResponse(w, http.StatusOK, "Buy Trigger Cancelled")
+	writeResponse(w, http.StatusOK, "Buy Trigger Cancelled")
 	return
 }
 
 func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintln(w, "Cancelling Sell Request");
 	vars := mux.Vars(r)
 	UserId := vars["id"]
 	Symbol := vars["symbol"]
@@ -477,31 +419,35 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	
+	//Get Database and User Information
 	db, uid, found, _ := getDatabaseUserId(UserId)
-
 	if !found {
-		//error
+		writeResponse(w, http.StatusOK, "User Does Not Exist")
 		return
 	}
 
+	//Get Sell Trigger to Cancel
 	var id int
 	getSellTriggerIdRows, err := db.Query(getSellTriggerId, uid, Symbol)
 	defer getSellTriggerIdRows.Close()
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Failed To Cancel: " + err.Error())
 		return
 	}
 	found = false
-
 	for getSellTriggerIdRows.Next() {
 		found = true
 		err = getSellTriggerIdRows.Scan(&id)
 	}
+
+	//Cancel Sell Trigger
 	_, err = db.Exec(cancelSellTrigger, id)
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Failed To Cancel: " + err.Error())
 		return
 	}
+
+	//Send Trigger update
 	Trigger := TriggerEvent{
 		TriggerType     : "buy",
 		UserId          : UserId,
@@ -509,8 +455,9 @@ func CancelSellTrigger(w http.ResponseWriter, r *http.Request){
 		UpdatedAt       : time.Now(),
 	}
 	SendRabbitMessage(Trigger, "buy")
+
 	//success
-	//writeResponse(w, http.StatusOK, "Sell Trigger Cancelled")
+	writeResponse(w, http.StatusOK, "Sell Trigger Cancelled")
 	return
 }
 
@@ -538,7 +485,6 @@ func PerformSellTrigger(w http.ResponseWriter, r *http.Request){
 
 	//Check If User Exists
 	db, uid, found, _ := getDatabaseUserId(UserId) 
-	
 	if !found {
 		//error
 		return

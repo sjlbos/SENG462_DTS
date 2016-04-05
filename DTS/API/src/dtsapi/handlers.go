@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	//"os"
 	"log"
 	"strings"
 	"strconv"
 	"time"
 	"bytes"
-    	"database/sql"
+    "database/sql"
 	"github.com/streadway/amqp"
 	"github.com/nu7hatch/gouuid"
 )
@@ -119,8 +118,10 @@ type TriggerEvent struct{
 }
 
 func getStockPrice(TransId string, getNew string, UserId string, StockId string ,guid string) string {
+    //Format Request String
 	strEcho :=  getNew + "," + UserId + "," + StockId + "," + TransId + "," + guid + "\n"
 
+    //Create Connection
 	addr, err := net.ResolveTCPAddr("tcp", quoteCacheConnectionString)
     if err != nil {
         println("addr Error: " + err.Error())
@@ -133,12 +134,14 @@ func getStockPrice(TransId string, getNew string, UserId string, StockId string 
 		return "-1"
 	}
 	
+    //Write Request String
 	_, err = qconn.Write([]byte(strEcho))
 	if err != nil {
 		println("Write to server Error:", err.Error())
 		return "-1"
 	}
 
+    //Create Reply
 	reply := make([]byte, 100)
 	_, err = qconn.Read(reply)
 	reply = bytes.Trim(reply, "\x00")

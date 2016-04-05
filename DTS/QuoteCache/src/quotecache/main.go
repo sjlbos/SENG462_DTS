@@ -290,7 +290,7 @@ func handleConnection(conn net.Conn){
 		}
 		SendRabbitMessage(QuoteEvent,QuoteEvent.EventType)
 
-		backoff := 35 + rand.Intn(10)
+		backoff := 50 + rand.Intn(5)
 
 		tmpQuoteItem := QuoteCacheItem{
 			Expiration : time.Now().Add(time.Duration(backoff)*time.Second),

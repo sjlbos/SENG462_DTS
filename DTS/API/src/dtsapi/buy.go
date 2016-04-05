@@ -41,60 +41,34 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		Funds           : t.Amount,
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
+
+	//Decode Request Body
 	if err != nil {
-		//error decoding
 		writeResponse(w, http.StatusBadRequest, "Request Body Is Invalid")
 		return
 	}
 
-	//Error Checking
+	//Validate Request Body
 	AmountDec,err := decimal.NewFromString(t.Amount)
 	if err != nil{
 		writeResponse(w, http.StatusBadRequest, "Request Body Is Invalid")
 		return
 	}
 
+	//Validate amount to buy
 	if(AmountDec.Cmp(zero) != 1){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Amount to add is not a valid number",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 	    return
 	}
+
 	StockId := t.Symbol
+	//Validate Stock Symbol
 	if(len(StockId) == 0 || len(StockId) > 3){
-	    Error := ErrorEvent{
-		EventType       : "ErrorEvent",
-		Guid            : Guid.String(),
-		OccuredAt       : time.Now(),
-		TransactionId   : TransId,
-		UserId          : UserId,
-		Service         : "API",
-		Server          : Hostname,
-		Command         : "ADD",
-		StockSymbol     : "",
-		Funds           : t.Amount,
-		FileName        : "",
-		ErrorMessage    : "Symbol is Not Valid",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 	    return
 	}
 
-	//Get A Quote
+	//Get and Validate Quote
 	var strPrice string
 	strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
 	var quotePrice decimal.Decimal
@@ -104,93 +78,39 @@ func Buy(w http.ResponseWriter, r *http.Request){
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Quote is not greater than 0",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
 		return
 	}
+
 	//Check If User Exists
 	db, uid, found, _ := getDatabaseUserId(UserId) 
-
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "BUY",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "User Does not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "User Does Not Exist")
 		return
 	}
+
+	//Calculate Stock To Buy
 	toBuy := (AmountDec.Div(quotePrice)).Floor()
 	
-	//Check to make sure amount is valid
+	//Validate Buy Amount
 	if(toBuy.Cmp(zero) != 1){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Cannot Buy less than 1 stock",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Cannot Buy " + toBuy.String() + " stock")
 	    return
 	}
 
+	//Add Pending Purchase for Amount
 	_, err = db.Exec(addPendingPurchase, uid, t.Symbol, toBuy.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
 	if(err != nil){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "BUY",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Failed to create purchase",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusInternalServerError, "Failed to Create Purchase")
-	    	return
+	    return
 	}
+
 	//success
 	writeResponse(w, http.StatusOK, "Purchase Request has been Created")
 	return
 }
+
+
 
 func CommitBuy(w http.ResponseWriter, r *http.Request){
 	vars := mux.Vars(r)
@@ -216,37 +136,22 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType); 
 
-
+	//Get Database and Verify User Exists
 	db, uid, found, _ := getDatabaseUserId(UserId) 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_BUY",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType) 
-		//error
 		writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 		return       
 	}
 
+	//Get Latest Pending Purchase
 	LatestPendingrows, err := db.Query(getLatestPendingPurchase, uid)
 	defer LatestPendingrows.Close()
 	if err != nil{
-		//error
 		writeResponse(w, http.StatusBadRequest, "LatestPendingRows: " + err.Error())
 		return
 	}
 
+	//
 	var id int
 	var stock string
 	var num_shares int
@@ -259,26 +164,12 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
 	} 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_BUY",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "No recent BUY commands issued",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "LatestPendingRows: " + "No Recent Buy commands issued")
 		return                  
 	}
+
+	//Check if Purchase Expired
 	if expires_at.Before(time.Now()){
-		//success (Kinda)
 		writeResponse(w, http.StatusOK, "Purchase Request has Timed Out")
 		_, err = db.Exec(cancelTransaction, id)
 		if err != nil{
@@ -287,26 +178,14 @@ func CommitBuy(w http.ResponseWriter, r *http.Request){
 		}
 		return
 	}
+
+	//Commit Purchase
 	_, err = db.Exec(commitPurchase, id, time.Now())
 	if err != nil {
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_BUY",
-			StockSymbol     : stock,
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "Not Enough funds to buy Stocks",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "Commit Purchase: " + err.Error())
 		return
 	}
+
 	//success
 	writeResponse(w, http.StatusOK, "Purchase Request has been Commited")
 	return
@@ -339,34 +218,17 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 	//Get Database User
 	db, uid, found, _ := getDatabaseUserId(UserId) 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "CANCEL_BUY",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)    
-		//error
 		writeResponse(w, http.StatusBadRequest, "User Account Does Not Exist")
 		return    
 	}
 
+	//Get Latest Pending Purchase
 	LatestPendingrows, err := db.Query(getLatestPendingPurchase, uid)
 	defer LatestPendingrows.Close()
 	if err != nil {
-		//error
 		writeResponse(w, http.StatusBadRequest, "LatestPendingrows: " + err.Error())
 		return
 	}
-
 	var id int
 	var stock string
 	var num_shares int
@@ -379,33 +241,20 @@ func CancelBuy(w http.ResponseWriter, r *http.Request){
 		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
 	} 
 
+	//Check If a Command Has Been Issued
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "CANCEL_BUY",
-			StockSymbol     : stock,
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "No recent BUY commands issued",   
-		}
-		SendRabbitMessage(Error,Error.EventType)       
-		//error
 		writeResponse(w, http.StatusBadRequest, "No Recent BUY commands to be Cancelled")
 		return           
 	}
 
+	//Cancel Transaction
 	_, err = db.Exec(cancelTransaction, id)
 	if err != nil {
-		//error
 		writeResponse(w, http.StatusInternalServerError, "Failed To Cancel Transaction: " + err.Error())
 		return
 	}	
+
+	//Success
 	writeResponse(w, http.StatusOK, "Purchase Request has been Cancelled")
 	return 
 }

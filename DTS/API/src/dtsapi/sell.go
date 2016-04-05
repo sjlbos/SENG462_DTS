@@ -46,7 +46,6 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 	if err != nil {
-		//error
 		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -54,22 +53,6 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	//get User Account Information
 	db, id, found, _ := getDatabaseUserId(UserId) 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "SELL",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
-		//error
 		writeResponse(w, http.StatusOK, "User Account Does Not Exist")
 		return
 	}
@@ -77,110 +60,49 @@ func Sell(w http.ResponseWriter, r *http.Request){
 	//Check amount
 	AmountDec,err := decimal.NewFromString(t.Amount)
 	if err != nil{
-		//error
 		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if(AmountDec.Cmp(zero) != 1){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Amount to add is not a valid number",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
-	    writeResponse(w, http.StatusBadRequest, "Amount to buy is not a valid number")
+	    writeResponse(w, http.StatusBadRequest, "Amount to sell is not a valid number")
 	    return
 	}
 
 	//Check Stock Symbol
 	StockId := t.Symbol
 	if(len(StockId) == 0 || len(StockId) > 3){
-	    Error := ErrorEvent{
-		EventType       : "ErrorEvent",
-		Guid            : Guid.String(),
-		OccuredAt       : time.Now(),
-		TransactionId   : TransId,
-		UserId          : UserId,
-		Service         : "API",
-		Server          : Hostname,
-		Command         : "ADD",
-		StockSymbol     : "",
-		Funds           : t.Amount,
-		FileName        : "",
-		ErrorMessage    : "Symbol is Not Valid",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 	    return
 	}
 
-	//Get A Quote
+	//Get and Verify Quote
 	var strPrice string
 	strPrice = getStockPrice(TransId ,"true", UserId, StockId, Guid.String())
-
 	var quotePrice decimal.Decimal
 	quotePrice, err = decimal.NewFromString(strPrice)
 	if err != nil{
-		//error
 		writeResponse(w, http.StatusBadRequest, err.Error())
 		return;
 	}
 	if(quotePrice.Cmp(zero) != 1){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Amount to add is not a valid number",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Quote is not a valid number")
 	    return
 	}
 
+	//Calculate Amount to Sell
 	toSell := (AmountDec.Div(quotePrice)).Floor()
 	if toSell.Cmp(zero) != 1 {
 		writeResponse(w, http.StatusOK, "Can't Sell less than 1 Stock")
 		return
 	}
 
+	//Create Pending Sale
 	_,err = db.Exec(addPendingSale, id, t.Symbol, toSell.String(), strPrice, time.Now(), time.Now().Add(time.Second*60))
 	if err != nil {
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "SELL",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Failed to create sale",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "Add pending Sale; " + err.Error())
-		//error
 		return
 	}
+
 	//success
 	writeResponse(w, http.StatusOK, "Sale Request Has Been Created")
 	return    
@@ -212,31 +134,18 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 	}
 	SendRabbitMessage(CommandEvent,CommandEvent.EventType);
 
-	//Find user in database
+	//Find User and Database Information
 	db, uid, found, _ := getDatabaseUserId(UserId) 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_SELL",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)        
+		writeResponse(w, http.StatusOK, "User Does not Exist")
+		return       
 	}
 
-	//find last sell
+	//Get Last Pending Sale
 	LatestPendingrows, err := db.Query(getLatestPendingSale, uid)
 	defer LatestPendingrows.Close()
 	if err != nil {
-		//error
+		writeResponse(w, http.StatusOK, "Error Getting Recent Transaction: " + err.Error())
 		return
 	}
 	var id int
@@ -250,57 +159,30 @@ func CommitSell(w http.ResponseWriter, r *http.Request){
 		found = true
 		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
 	} 
+
+	//Verify Pending Sale
 	if !found {
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_SELL",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "No recent SELL commands issued",   
-		}
-		SendRabbitMessage(Error,Error.EventType) 
-		//error
+		writeResponse(w, http.StatusOK, "No Recent Sell Commands")
 		return                 
 	}
 	if expires_at.Before(time.Now()){
-		//success (Kinda)
-		//writeResponse(w, http.StatusBadRequest, "Sale Request has Timed Out")
 		_, err = db.Exec(cancelTransaction, id)
 		if err != nil{
 			//error
+			writeResponse(w, http.StatusOK, "Error Cancelling Expired Transaction: " + err.Error())
 			return
 		}
+		writeResponse(w, http.StatusOK, "Transaction Has Expired")
 		return
 	}
 	_, err = db.Exec(commitSale, id, time.Now())
 	if(err != nil){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "COMMIT_SELL",
-			StockSymbol     : stock,
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "Can not Sell stocks",   
-		}
-		SendRabbitMessage(Error,Error.EventType)  
-		//error
+		writeResponse(w, http.StatusOK, "Error Commiting: " + err.Error())
 		return
 	}
+
 	//success
-	//writeResponse(w, http.StatusOK, "Sale Request Has Been Commited")
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Commited")
 	return
 }
 
@@ -333,28 +215,15 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 	//Find user in DB
 	db, uid, found,_ := getDatabaseUserId(UserId) 
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "CANCEL_BUY",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "User Account Does Not Exist",   
-		}
-		SendRabbitMessage(Error,Error.EventType)        
+		writeResponse(w, http.StatusOK, "User Does Not Exist")
+		return        
 	}
 
 	//Find last Sell Command
 	LatestPendingrows, err := db.Query(getLatestPendingSale, uid)
 	defer LatestPendingrows.Close()
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Error Getting Last Sale: " + err.Error())
 		return
 	}
 	var id int
@@ -369,30 +238,15 @@ func CancelSell(w http.ResponseWriter, r *http.Request){
 		err = LatestPendingrows.Scan(&id, &uid, &stock, &num_shares, &share_price, &requested_at, &expires_at)
 	}
 	if(found == false){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "CANCEL_BUY",
-			StockSymbol     : "",
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "No recent BUY commands issued",   
-		}
-		SendRabbitMessage(Error,Error.EventType)   
-		//error
+		writeResponse(w, http.StatusOK, "No Recent Sell Commands")  
 		return               
 	}
 	_, err = db.Exec(cancelTransaction, id)
 	if err != nil{
-		//error
+		writeResponse(w, http.StatusOK, "Error Cancelling Sale: " + err.Error())
 		return
 	}
 	//success
-	//writeResponse(w, http.StatusOK, "Sale Request Has Been Cancelled")
+	writeResponse(w, http.StatusOK, "Sale Request Has Been Cancelled")
 	return
 }

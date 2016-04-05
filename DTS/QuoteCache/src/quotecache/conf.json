@@ -3,6 +3,6 @@
 	"RabbitPort"     : "44410",
 	"HostPort"       : "44410",
 	"QuotePort"      : "4443",
-	"ThreadWait"	 : "100"
+	"ThreadWait"	 : "10"
 }
 

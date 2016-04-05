@@ -35,34 +35,23 @@ func Quote(w http.ResponseWriter, r *http.Request){
 
 	//Check Stock Symbol
 	if(len(StockId) == 0 || len(StockId) > 3){
-		Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : StockId,
-			Funds           : "",
-			FileName        : "",
-			ErrorMessage    : "Symbol is Not Valid",   
-		}
-		SendRabbitMessage(Error,Error.EventType)
 		writeResponse(w, http.StatusBadRequest, "Symbol is Not Valid")
 		return
 	}
 
+	//Get Stock Price
 	var strPrice string
 	strPrice = getStockPrice(TransId ,"false", UserId, StockId, Guid.String())
 
+	//Verify Return Price
 	var price decimal.Decimal
 	price, err := decimal.NewFromString(strPrice)
 	if err != nil{
 		writeResponse(w, http.StatusBadRequest, "Quote Return: " + err.Error())
 		return
 	}
+
+	//Success
 	var Output string = "The Quote For UserId " + UserId + " and StockId " + StockId + " returned " + price.String()
 	writeResponse(w, http.StatusOK, Output)
 }

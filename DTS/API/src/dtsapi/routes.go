@@ -104,18 +104,6 @@ var routes = Routes{
     	PerformSellTrigger,
     },
     Route{
-    	"DumplogUser",
-    	"GET",
-    	"/api/users/{id}/transactions",
-    	DumplogUser,
-    },
-    Route{
-    	"Dumplog",
-    	"GET",
-    	"/api/users/transactions",
-    	Dumplog,
-    },
-    Route{
     	"DisplaySummary",
     	"GET",
     	"/api/users/{id}/summary",

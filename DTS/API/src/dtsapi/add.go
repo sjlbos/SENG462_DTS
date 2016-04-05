@@ -54,32 +54,20 @@ func Add(w http.ResponseWriter, r *http.Request){
 	//Get user id from Database
 	db := getDatabasePointerForUser(UserId)
 
+	//Amount to add is invalid
 	if(AmountDec.Cmp(zero) != 1){
-	    Error := ErrorEvent{
-			EventType       : "ErrorEvent",
-			Guid            : Guid.String(),
-			OccuredAt       : time.Now(),
-			TransactionId   : TransId,
-			UserId          : UserId,
-			Service         : "API",
-			Server          : Hostname,
-			Command         : "ADD",
-			StockSymbol     : "",
-			Funds           : t.Amount,
-			FileName        : "",
-			ErrorMessage    : "Amount to add is not a valid number",   
-	    }
-	    SendRabbitMessage(Error,Error.EventType)
 	    writeResponse(w, http.StatusBadRequest, "Amount to add is not a valid number")
 	    return
 	}
 
 	_, err = db.Exec(addOrCreateUser, UserId, t.Amount, time.Now())
+	//Failed to Create Account
 	if err != nil {
 		writeResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	//Success
 	writeResponse(w, http.StatusOK, "Account Updated with Funds")
 	return
 }

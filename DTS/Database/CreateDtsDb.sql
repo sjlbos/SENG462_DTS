@@ -128,8 +128,7 @@ LANGUAGE SQL VOLATILE;
 CREATE OR REPLACE FUNCTION get_user_portfolio(_uid int)
 RETURNS TABLE(stock varchar, num_shares int) AS
 $$
-	SELECT 	stock,
-	num_shares
+	SELECT 	stock, num_shares
 	FROM portfolios
 	WHERE uid = _uid;
 $$

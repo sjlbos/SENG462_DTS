@@ -7,7 +7,9 @@
         "DBConnectionString" :  [
 		"host=B133.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
 		"host=B142.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
-		"host=B144.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable"
+		"host=B144.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
+                "host=B145.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable",
+                "host=B146.seng.uvic.ca user=dts_user password=Group1 dbname=dts port=44410 sslmode=disable"
         ]
 }
 
