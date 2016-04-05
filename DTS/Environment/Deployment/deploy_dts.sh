@@ -32,21 +32,18 @@ fi
 
 HOST_SUFFIX=".seng.uvic.ca"
 
-WEB_SERVERS=("")
-WEB_SERVER_PORT=""
-
 API_SERVERS=("b147" "b148" "b149" "b150")
 API_PORT="44410"
 
 QUOTE_CACHE_SERVER="b143"
 QUOTE_CACHE_PORT="44410"
 
-TRANSACTION_MONITOR_SERVERS=("b136")
+TRANSACTION_MONITOR_SERVERS=("b136" "b153")
 TRANSACTION_MONITOR_PORT="44410"
 
 TRIGGER_MANAGER_SERVER="b135"
 
-DTS_DB_SERVERS=("b133" "b142" "b144")
+DTS_DB_SERVERS=("b133" "b142" "b144" "b145" "b146")
 DTS_DB_PORT="44410"
 
 AUDIT_DB_SERVER="b132"
@@ -89,10 +86,6 @@ do
 	$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh $USER $host$HOST_SUFFIX dts $DTS_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsDb.sql
 done
 
-# Deploy Audit Database
-echo "Deploying DTS Audit Database"
-$REPO_ROOT/DTS/Environment/Deployment/deploy_database.sh $USER $AUDIT_DB_SERVER$HOST_SUFFIX dts_audit $AUDIT_DB_PORT $DB_DATA_DIR $REPO_ROOT/DTS/Database CreateDtsAuditDb.sql
-
 # Build DTS
 echo "Building DTS binaries..."
 $REPO_ROOT/DTS/Build/build.sh $REPO_ROOT
@@ -132,13 +125,6 @@ for host in "${API_SERVERS[@]}"
 do
 	echo "Deploying DTS API to $host."
 	deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR DtsApi.zip
-done
-
-# Deploy Web Servers
-for host in "${WEB_SERVERS[@]}"
-do
-	echo "Deploying web server to $host."
-	#deployZipFile "$USER@$host$HOST_SUFFIX" $DEPLOYMENT_ROOT $PACKAGE_DIR {Package Name Here!}
 done
 
 # Deploy WLG Slaves
